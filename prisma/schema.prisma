@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id          Int           @id @default(autoincrement())
+  title       String
+  eventDate   DateTime      @map("event_date")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  
+  participants Participant[]
+  venues       Venue[]
+  settlements  Settlement[]
+
+  @@map("events")
+}
+
+model Participant {
+  id         Int      @id @default(autoincrement())
+  eventId    Int      @map("event_id")
+  nickname   String
+  gender     Gender?
+  role       Role?
+  stayRange  Json     @map("stay_range")
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  settlements Settlement[]
+
+  @@map("participants")
+}
+
+model Venue {
+  id            Int      @id @default(autoincrement())
+  eventId       Int      @map("event_id")
+  venueOrder    Int      @map("venue_order")
+  name          String
+  googleMapsUrl String?  @map("google_maps_url")
+  totalAmount   Int      @map("total_amount")
+  paymentMethod String?  @map("payment_method")
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("venues")
+}
+
+model Settlement {
+  id             Int           @id @default(autoincrement())
+  eventId        Int           @map("event_id")
+  participantId  Int           @map("participant_id")
+  amount         Int
+  paymentMethod  String?       @map("payment_method")
+  status         SettlementStatus @default(PENDING)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  
+  event          Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant    Participant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@map("settlements")
+}
+
+enum Gender {
+  male
+  female
+  unspecified
+}
+
+enum Role {
+  senior
+  junior
+  flat
+}
+
+enum SettlementStatus {
+  PENDING
+  PAID
+  CANCELLED
+} 

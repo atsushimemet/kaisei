@@ -1,4 +1,5 @@
 # 📄 PRD：飲み会精算支援アプリ「KAISEI（カイセイ）」v1.0
+
 ## 1. プロダクトの目的
 
 3〜6人規模の気心知れた友人・先輩・後輩との飲み会に特化し、
@@ -61,17 +62,17 @@
 * 幹事が精算ボタンを押すと、**各参加者ごとに共有可能なメッセージ**を生成：
 
 　**例：**
-　\`\`\`
+　```
 　昨日はありがとう！以下、精算金額の案内です。
 
 　🍺 1次会（焼肉ホルモン）：¥18,000
 　🍸 2次会（Bar SORA）：¥6,000
 　合計：¥24,000
-　→ あなたの支払額：¥3,900
+	→ あなたの支払額：¥3,900
 
 　デフォルトはPayPayです。
 　それ以外（現金、LINE Payなど）をご希望の方はこのメッセージに返信してください！
-　\`\`\`
+　```
 
 * ※このメッセージは幹事がLINEやMessengerにそのまま貼れる形式で出力される
 
@@ -127,3 +128,147 @@
   参加ありがとう！あなたの支払額：¥4,200  
   デフォルトはPayPay、それ以外の支払い方法がよければ教えてね！
   ```
+
+---
+
+## 8. 技術スタック
+
+* **フロントエンド**: Next.js 14, TypeScript, Tailwind CSS
+* **バックエンド**: Next.js API Routes
+* **データベース**: PostgreSQL
+* **ORM**: Prisma
+* **開発環境**: Docker, Docker Compose
+
+---
+
+## 9. 開発環境のセットアップ
+
+### 前提条件
+
+* Docker
+* Docker Compose
+
+### 1. リポジトリのクローン
+
+```bash
+git clone <repository-url>
+cd kaisei
+```
+
+### 2. 環境変数の設定
+
+```bash
+cp env.example .env
+```
+
+`.env`ファイルを編集して、必要な環境変数を設定してください。
+
+### 3. Docker環境の起動
+
+```bash
+# 開発環境の起動
+docker-compose up --build
+
+# バックグラウンドで起動する場合
+docker-compose up -d --build
+```
+
+### 4. データベースの初期化
+
+```bash
+# Prismaクライアントの生成
+docker-compose exec app-dev npx prisma generate
+
+# データベースマイグレーション
+docker-compose exec app-dev npx prisma db push
+```
+
+### 5. アプリケーションへのアクセス
+
+* アプリケーション: http://localhost:3000
+* データベース: localhost:5432
+
+---
+
+## 10. 開発コマンド
+
+```bash
+# 開発環境の起動
+docker-compose up
+
+# 開発環境の停止
+docker-compose down
+
+# ログの確認
+docker-compose logs -f app-dev
+
+# データベースのリセット
+docker-compose down -v
+docker-compose up --build
+
+# コンテナ内でコマンド実行
+docker-compose exec app-dev npm run lint
+docker-compose exec app-dev npx prisma studio
+```
+
+---
+
+## 11. プロジェクト構造
+
+```
+kaisei/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── api/            # API Routes
+│   │   ├── events/         # 飲み会関連ページ
+│   │   ├── globals.css     # グローバルスタイル
+│   │   ├── layout.tsx      # ルートレイアウト
+│   │   └── page.tsx        # ホームページ
+│   ├── components/         # React コンポーネント
+│   ├── lib/               # ユーティリティ関数
+│   └── types/             # TypeScript 型定義
+├── prisma/                # データベーススキーマ
+├── Dockerfile             # 本番用Dockerfile
+├── Dockerfile.dev         # 開発用Dockerfile
+├── docker-compose.yml     # Docker Compose設定
+└── init.sql              # データベース初期化SQL
+```
+
+---
+
+## 12. 主要機能
+
+### MVP機能
+
+* 飲み会登録・管理機能
+* 参加者管理機能
+* お店登録機能
+* 傾斜配分計算機能
+* 精算メッセージ生成機能
+
+### 今後の拡張予定
+
+* LINE連携機能
+* 決済API連携機能
+* テンプレート保存機能
+* 精算完了率ダッシュボード
+
+---
+
+## 13. データベース設計
+
+詳細なデータベース設計については、`prisma/schema.prisma`を参照してください。
+
+---
+
+## 14. 貢献
+
+1. 新しいブランチを作成
+2. 変更をコミット
+3. プルリクエストを作成
+
+---
+
+## 15. ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。
