@@ -9,6 +9,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const body = await request.json()
+    const { rules } = body
+
     const event = await prisma.event.findUnique({
       where: {
         id: parseInt(params.id),
@@ -30,18 +33,18 @@ export async function POST(
       )
     }
 
-    // デフォルトの傾斜ルール
-    const rules = {
-      genderMultiplier: { male: 1.0, female: 0.8 },
-      roleMultiplier: { senior: 1.2, junior: 1.0, flat: 1.0 },
-      stayRangeMultiplier: { first: 1.0, second: 0.7, third: 0.5 },
+    // デフォルトの傾斜ルール（設定が送信されていない場合）
+    const defaultRules = {
+      genderMultiplier: { male: 1.0, female: 1.0, unspecified: 1.0 },
+      roleMultiplier: { senior: 1.2, junior: 0.8, flat: 1.0 },
+      stayRangeMultiplier: { first: 1.0, second: 1.0, third: 1.0 },
     }
 
     // 精算計算
     const calculations = calculateSettlement(
       event.participants,
       event.venues,
-      rules
+      rules || defaultRules
     )
 
     // 精算結果をデータベースに保存

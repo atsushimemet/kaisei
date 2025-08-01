@@ -34,8 +34,16 @@ export default function EventDetailPage() {
   const calculateSettlements = async () => {
     setCalculating(true)
     try {
+      // ローカルストレージから設定を取得
+      const savedRules = localStorage.getItem('settlementRules')
+      const rules = savedRules ? JSON.parse(savedRules) : null
+
       const response = await fetch(`/api/events/${params.id}/settlements`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ rules }),
       })
       if (response.ok) {
         const data = await response.json()
