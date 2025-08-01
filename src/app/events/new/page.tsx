@@ -116,9 +116,10 @@ export default function NewEventPage() {
 
   const getPaymentMethodLabel = (method: string) => {
     switch (method) {
+      case 'credit_card': return 'クレジットカード'
+      case 'cash': return '現金'
       case 'paypay': return 'PayPay'
-      case 'cash': return '手渡し'
-      case 'bank_transfer': return '口座振り込み'
+      case 'quicpay': return 'QUICPay'
       case 'other': return 'その他'
       default: return method
     }
@@ -318,9 +319,10 @@ export default function NewEventPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option value="">選択してください</option>
+                  <option value="credit_card">クレジットカード</option>
+                  <option value="cash">現金</option>
                   <option value="paypay">PayPay</option>
-                  <option value="cash">手渡し</option>
-                  <option value="bank_transfer">口座振り込み</option>
+                  <option value="quicpay">QUICPay</option>
                   <option value="other">その他</option>
                 </select>
               </div>

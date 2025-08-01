@@ -2,6 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# OpenSSLとその他の必要なパッケージをインストール
+RUN apk add --no-cache openssl
+
 # パッケージファイルをコピー
 COPY package*.json ./
 
