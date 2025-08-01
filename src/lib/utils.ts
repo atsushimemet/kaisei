@@ -6,10 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-  }).format(amount)
+  return new Intl.NumberFormat('ja-JP').format(amount)
 }
 
 export function formatDate(date: Date | string): string {
@@ -23,9 +20,10 @@ export function formatDate(date: Date | string): string {
 
 export function getPaymentMethodLabel(method: string): string {
   switch (method) {
+    case 'credit_card': return 'クレジットカード'
+    case 'cash': return '現金'
     case 'paypay': return 'PayPay'
-    case 'cash': return '手渡し'
-    case 'bank_transfer': return '口座振り込み'
+    case 'quicpay': return 'QUICPay'
     case 'other': return 'その他'
     default: return method || '未設定'
   }
@@ -146,9 +144,8 @@ export function generateSettlementMessage(
   message += `→ あなたの支払額：¥${formatCurrency(calculation.amount)}\n\n`
 
   // デフォルトの支払い方法を設定
-  const defaultPaymentMethod = 'PayPay'
-  message += `デフォルトは${defaultPaymentMethod}です。\n`
-  message += `それ以外（手渡し、口座振り込みなど）をご希望の方はこのメッセージに返信してください！`
+  message += `PayPayの場合<PayPay link>からお願いします！\n`
+  message += `それ以外（手渡し、口座振り込みなど）がいい人は連絡ください！`
 
   return message
 } 

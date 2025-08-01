@@ -56,9 +56,10 @@ export default function EventDetailPage() {
 
   const getPaymentMethodLabel = (method: string) => {
     switch (method) {
+      case 'credit_card': return 'クレジットカード'
+      case 'cash': return '現金'
       case 'paypay': return 'PayPay'
-      case 'cash': return '手渡し'
-      case 'bank_transfer': return '口座振り込み'
+      case 'quicpay': return 'QUICPay'
       case 'other': return 'その他'
       default: return method || '未設定'
     }
@@ -82,7 +83,7 @@ export default function EventDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* ヘッダー */}
+      {/* イベント情報 */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.title}</h1>
         <p className="text-gray-600">
