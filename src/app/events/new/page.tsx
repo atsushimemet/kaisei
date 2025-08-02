@@ -19,9 +19,9 @@ export default function NewEventPage() {
     gender: 'unspecified',
     role: 'flat',
     stayRange: {
-      firstParty: true,
-      secondParty: false,
-      thirdParty: false,
+      firstParty: 1.0,
+      secondParty: 0.0,
+      thirdParty: 0.0,
     },
   })
 
@@ -43,9 +43,9 @@ export default function NewEventPage() {
         gender: 'unspecified',
         role: 'flat',
         stayRange: {
-          firstParty: true,
-          secondParty: false,
-          thirdParty: false,
+          firstParty: 1.0,
+          secondParty: 0.0,
+          thirdParty: 0.0,
         },
       })
     }
@@ -179,6 +179,11 @@ export default function NewEventPage() {
                         ({participant.gender === 'male' ? '男性' : participant.gender === 'female' ? '女性' : '未設定'} / 
                         {participant.role === 'senior' ? '先輩' : participant.role === 'junior' ? '後輩' : 'フラット'})
                       </span>
+                      <div className="text-xs text-gray-400 mt-1">
+                        参加: {participant.stayRange.firstParty > 0 ? '1次会' : ''}
+                        {participant.stayRange.secondParty > 0 ? (participant.stayRange.firstParty > 0 ? ', 2次会' : '2次会') : ''}
+                        {participant.stayRange.thirdParty > 0 ? (participant.stayRange.firstParty > 0 || participant.stayRange.secondParty > 0 ? ', 3次会' : '3次会') : ''}
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -196,55 +201,130 @@ export default function NewEventPage() {
           {/* 参加者追加フォーム */}
           <div className="border-t pt-4">
             <h3 className="text-lg font-medium text-gray-900 mb-3">参加者を追加</h3>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ニックネーム
-                </label>
-                <input
-                  type="text"
-                  value={currentParticipant.nickname}
-                  onChange={(e) => setCurrentParticipant(prev => ({ ...prev, nickname: e.target.value }))}
-                  placeholder="例: 田中さん"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                />
+            <div className="space-y-4">
+              {/* 基本情報 */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ニックネーム
+                  </label>
+                  <input
+                    type="text"
+                    value={currentParticipant.nickname}
+                    onChange={(e) => setCurrentParticipant(prev => ({ ...prev, nickname: e.target.value }))}
+                    placeholder="例: 田中さん"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    性別
+                  </label>
+                  <select
+                    value={currentParticipant.gender}
+                    onChange={(e) => setCurrentParticipant(prev => ({ ...prev, gender: e.target.value as any }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="unspecified">未設定</option>
+                    <option value="male">男性</option>
+                    <option value="female">女性</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    役割
+                  </label>
+                  <select
+                    value={currentParticipant.role}
+                    onChange={(e) => setCurrentParticipant(prev => ({ ...prev, role: e.target.value as any }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="flat">フラット</option>
+                    <option value="senior">先輩</option>
+                    <option value="junior">後輩</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  性別
-                </label>
-                <select
-                  value={currentParticipant.gender}
-                  onChange={(e) => setCurrentParticipant(prev => ({ ...prev, gender: e.target.value as any }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                >
-                  <option value="unspecified">未設定</option>
-                  <option value="male">男性</option>
-                  <option value="female">女性</option>
-                </select>
+
+              {/* 滞在時間設定 */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">滞在時間設定</h4>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      1次会参加率
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="1"
+                      value={currentParticipant.stayRange.firstParty}
+                      onChange={(e) => setCurrentParticipant(prev => ({
+                        ...prev,
+                        stayRange: {
+                          ...prev.stayRange,
+                          firstParty: parseFloat(e.target.value)
+                        }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      2次会参加率
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="1"
+                      value={currentParticipant.stayRange.secondParty}
+                      onChange={(e) => setCurrentParticipant(prev => ({
+                        ...prev,
+                        stayRange: {
+                          ...prev.stayRange,
+                          secondParty: parseFloat(e.target.value)
+                        }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      3次会参加率
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="1"
+                      value={currentParticipant.stayRange.thirdParty}
+                      onChange={(e) => setCurrentParticipant(prev => ({
+                        ...prev,
+                        stayRange: {
+                          ...prev.stayRange,
+                          thirdParty: parseFloat(e.target.value)
+                        }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  役割
-                </label>
-                <select
-                  value={currentParticipant.role}
-                  onChange={(e) => setCurrentParticipant(prev => ({ ...prev, role: e.target.value as any }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                >
-                  <option value="flat">フラット</option>
-                  <option value="senior">先輩</option>
-                  <option value="junior">後輩</option>
-                </select>
-              </div>
-              <div className="flex items-end">
+
+              {/* 追加ボタン */}
+              <div className="flex justify-center">
                 <button
                   type="button"
                   onClick={addParticipant}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-4 h-4 inline mr-2" />
-                  追加
+                  参加者を追加
                 </button>
               </div>
             </div>

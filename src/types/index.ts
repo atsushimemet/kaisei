@@ -44,12 +44,9 @@ export interface Settlement {
 }
 
 export interface StayRange {
-  firstParty: boolean
-  secondParty: boolean
-  thirdParty: boolean
-  firstPartyPartial?: boolean
-  secondPartyPartial?: boolean
-  thirdPartyPartial?: boolean
+  firstParty: number
+  secondParty: number
+  thirdParty: number
 }
 
 export interface CreateEventData {
