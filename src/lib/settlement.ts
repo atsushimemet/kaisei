@@ -1,26 +1,62 @@
 import { Event, Participant, Venue, PaymentSummary, SettlementTransfer, SettlementCalculation } from '@/types'
 
-// 設定可能な調整係数
-export const SETTLEMENT_CONFIG = {
-  // 性別による調整係数
+// デフォルト設定
+const DEFAULT_SETTLEMENT_CONFIG = {
   genderMultiplier: {
-    male: 1.2,     // 男性は1.2倍
-    female: 0.8,   // 女性は0.8倍
-    unspecified: 1.0 // 未設定は1.0倍
+    male: 1.2,
+    female: 0.8,
+    unspecified: 1.0
   },
-  // 役割による調整係数
   roleMultiplier: {
-    senior: 1.3,   // 先輩は1.3倍
-    junior: 0.7,   // 後輩は0.7倍
-    flat: 1.0      // フラットは1.0倍
+    senior: 1.3,
+    junior: 0.7,
+    flat: 1.0
   }
+}
+
+// 設定型定義
+export interface SettlementConfig {
+  genderMultiplier: {
+    male: number
+    female: number
+    unspecified: number
+  }
+  roleMultiplier: {
+    senior: number
+    junior: number
+    flat: number
+  }
+  stayRangeMultiplier?: {
+    first: number
+    second: number
+    third: number
+  }
+}
+
+// ローカルストレージから設定を取得する関数
+export function getSettlementConfig(): SettlementConfig {
+  if (typeof window === 'undefined') {
+    return DEFAULT_SETTLEMENT_CONFIG
+  }
+  
+  try {
+    const savedConfig = localStorage.getItem('settlementRules')
+    if (savedConfig) {
+      return JSON.parse(savedConfig)
+    }
+  } catch (error) {
+    console.error('Error loading settlement config:', error)
+  }
+  
+  return DEFAULT_SETTLEMENT_CONFIG
 }
 
 /**
  * 参加者の各会での支払い義務金額を計算
  */
-export function calculateSettlements(event: Event): SettlementCalculation[] {
+export function calculateSettlements(event: Event, config?: SettlementConfig): SettlementCalculation[] {
   const { participants, venues } = event
+  const settlementConfig = config || getSettlementConfig()
   
   return participants.map(participant => {
     let totalAmount = 0
@@ -49,8 +85,8 @@ export function calculateSettlements(event: Event): SettlementCalculation[] {
 
         if (rate > 0) {
           // 調整係数を適用
-          const genderMultiplier = SETTLEMENT_CONFIG.genderMultiplier[p.gender] || 1.0
-          const roleMultiplier = SETTLEMENT_CONFIG.roleMultiplier[p.role] || 1.0
+          const genderMultiplier = settlementConfig.genderMultiplier[p.gender] || 1.0
+          const roleMultiplier = settlementConfig.roleMultiplier[p.role] || 1.0
           return sum + (rate * genderMultiplier * roleMultiplier)
         }
         return sum
@@ -60,8 +96,8 @@ export function calculateSettlements(event: Event): SettlementCalculation[] {
       const baseAmount = (venue.totalAmount * stayRate) / totalParticipationRate
 
       // 調整係数を適用
-      const genderMultiplier = SETTLEMENT_CONFIG.genderMultiplier[participant.gender] || 1.0
-      const roleMultiplier = SETTLEMENT_CONFIG.roleMultiplier[participant.role] || 1.0
+      const genderMultiplier = settlementConfig.genderMultiplier[participant.gender] || 1.0
+      const roleMultiplier = settlementConfig.roleMultiplier[participant.role] || 1.0
       
       const adjustedAmount = baseAmount * genderMultiplier * roleMultiplier
 
@@ -166,8 +202,8 @@ export function calculateSettlementTransfers(paymentSummaries: PaymentSummary[])
 /**
  * 精算データの全体計算
  */
-export function calculateFullSettlement(event: Event) {
-  const settlements = calculateSettlements(event)
+export function calculateFullSettlement(event: Event, config?: SettlementConfig) {
+  const settlements = calculateSettlements(event, config)
   const paymentSummaries = calculatePaymentSummary(event, settlements)
   const transfers = calculateSettlementTransfers(paymentSummaries)
 

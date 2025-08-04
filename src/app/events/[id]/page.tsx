@@ -35,7 +35,26 @@ export default function EventDetailPage() {
   const calculateSettlements = async () => {
     setCalculating(true)
     try {
-      const response = await fetch(`/api/events/${params.id}/settlements`)
+      // ローカルストレージから設定を取得
+      let config = null
+      try {
+        const savedConfig = localStorage.getItem('settlementRules')
+        if (savedConfig) {
+          config = JSON.parse(savedConfig)
+        }
+      } catch (error) {
+        console.error('Error loading settlement config:', error)
+      }
+
+      // 設定を含めてAPIを呼び出し
+      const response = await fetch(`/api/events/${params.id}/settlements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ config }),
+      })
+      
       if (response.ok) {
         const data = await response.json()
         setSettlements(data.settlements)
@@ -172,6 +191,39 @@ export default function EventDetailPage() {
 
         {paymentSummaries.length > 0 && (
           <div className="space-y-8">
+            {/* 使用した設定の表示 */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="text-sm font-medium text-blue-900 mb-2">📋 使用した設定</h4>
+              <div className="text-xs text-blue-800 space-y-1">
+                {(() => {
+                  let config = null
+                  try {
+                    const savedConfig = localStorage.getItem('settlementRules')
+                    if (savedConfig) {
+                      config = JSON.parse(savedConfig)
+                    }
+                  } catch (error) {
+                    console.error('Error loading config for display:', error)
+                  }
+                  
+                  if (config) {
+                    return (
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div>
+                          <span className="font-medium">性別調整:</span> 男性{config.genderMultiplier.male}倍, 女性{config.genderMultiplier.female}倍, 未設定{config.genderMultiplier.unspecified}倍
+                        </div>
+                        <div>
+                          <span className="font-medium">役割調整:</span> 先輩{config.roleMultiplier.senior}倍, 後輩{config.roleMultiplier.junior}倍, フラット{config.roleMultiplier.flat}倍
+                        </div>
+                      </div>
+                    )
+                  } else {
+                    return <div>デフォルト設定を使用</div>
+                  }
+                })()}
+              </div>
+            </div>
+
             {/* 支払い状況サマリー */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">支払い状況</h3>

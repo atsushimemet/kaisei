@@ -9,6 +9,19 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // URLのクエリパラメータから設定を取得（オプション）
+    const { searchParams } = new URL(request.url)
+    const configParam = searchParams.get('config')
+    let config = null
+    
+    if (configParam) {
+      try {
+        config = JSON.parse(decodeURIComponent(configParam))
+      } catch (error) {
+        console.error('Error parsing config from query params:', error)
+      }
+    }
+
     const event = await prisma.event.findUnique({
       where: {
         id: parseInt(params.id),
@@ -35,8 +48,8 @@ export async function GET(
       )
     }
 
-    // 精算計算を実行
-    const settlementData = calculateFullSettlement(event as any)
+    // 精算計算を実行（設定がある場合は使用）
+    const settlementData = calculateFullSettlement(event as any, config)
 
     return NextResponse.json(settlementData)
   } catch (error) {
@@ -53,6 +66,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const body = await request.json()
+    const { config } = body
+
     const event = await prisma.event.findUnique({
       where: {
         id: parseInt(params.id),
@@ -74,8 +90,8 @@ export async function POST(
       )
     }
 
-    // 精算計算を実行
-    const settlementData = calculateFullSettlement(event as any)
+    // 精算計算を実行（クライアントから送信された設定を使用）
+    const settlementData = calculateFullSettlement(event as any, config)
 
     // 精算結果をデータベースに保存（既存の精算データを削除してから新規作成）
     await prisma.settlement.deleteMany({
