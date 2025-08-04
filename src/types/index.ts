@@ -27,7 +27,7 @@ export interface Venue {
   name: string
   googleMapsUrl?: string
   totalAmount: number
-  paymentMethod?: string
+  paidBy: string // 支払者のニックネーム
   createdAt: Date
 }
 
@@ -68,7 +68,7 @@ export interface CreateVenueData {
   name: string
   googleMapsUrl?: string
   totalAmount: number
-  paymentMethod?: string
+  paidBy: string // 支払者のニックネーム
 }
 
 export interface SettlementCalculation {
@@ -86,4 +86,18 @@ export interface SettlementCalculation {
       role: number
     }
   }[]
+}
+
+export interface PaymentSummary {
+  participantId: number
+  nickname: string
+  totalPaid: number // 実際に支払った金額
+  totalOwed: number // 支払い義務のある金額
+  balance: number // 差額（正の値：お金をもらう、負の値：支払う）
+}
+
+export interface SettlementTransfer {
+  from: string // 支払う人のニックネーム
+  to: string // 受け取る人のニックネーム
+  amount: number // 精算金額
 } 

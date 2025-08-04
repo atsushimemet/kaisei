@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
             name: venue.name,
             googleMapsUrl: venue.googleMapsUrl,
             totalAmount: venue.totalAmount,
-            paymentMethod: venue.paymentMethod,
+            paidBy: venue.paidBy,
           })),
         },
       },
