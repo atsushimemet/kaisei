@@ -1,7 +1,7 @@
 'use client'
 
 import { DEFAULT_SETTLEMENT_RULES, SettlementRules } from '@/types'
-import { ArrowLeft, Copy, Download, Plus, Save } from 'lucide-react'
+import { ArrowLeft, Copy, Download, HelpCircle, Plus, Save } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -32,6 +32,29 @@ interface QuickEvent {
   eventDate: string
   participants: QuickParticipant[]
   venues: QuickVenue[]
+}
+
+// ツールチップコンポーネント
+function Tooltip({ children, content }: { children: React.ReactNode; content: string }) {
+  const [isVisible, setIsVisible] = useState(false)
+
+  return (
+    <div className="relative inline-block">
+      <div
+        onMouseEnter={() => setIsVisible(true)}
+        onMouseLeave={() => setIsVisible(false)}
+        className="cursor-help"
+      >
+        {children}
+      </div>
+      {isVisible && (
+        <div className="absolute z-50 w-64 p-3 text-sm text-white bg-gray-900 rounded-lg shadow-lg -top-2 left-8 transform -translate-y-full">
+          {content}
+          <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function QuickEventPage() {
@@ -374,9 +397,14 @@ KAISEI - 飲み会精算支援アプリ
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      参加回数
-                    </label>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        ⚪︎次回滞在率
+                      </label>
+                      <Tooltip content="⚪︎次回にどれだけいたかを設定するコンポーネントです。1.0は全時間参加、0.0は参加なしを意味します。">
+                        <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                      </Tooltip>
+                    </div>
                     <div className="grid grid-cols-3 gap-2">
                       <input
                         type="number"
