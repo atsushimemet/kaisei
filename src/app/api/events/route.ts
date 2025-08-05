@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
             nickname: participant.nickname,
             gender: participant.gender,
             role: participant.role,
-            stayRange: participant.stayRange,
+            stayRange: JSON.stringify(participant.stayRange), // ObjectをJSON文字列に変換
           })),
         },
         venues: {
@@ -58,7 +58,29 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json(events)
+    // stayRangeをJSONオブジェクトに変換して返す
+    const eventsWithParsedStayRange = events.map(event => ({
+      ...event,
+      participants: event.participants.map(participant => {
+        let parsedStayRange: any;
+        try {
+          parsedStayRange = JSON.parse(participant.stayRange) as any;
+        } catch {
+          parsedStayRange = {
+            firstParty: 1,
+            secondParty: 1,
+            thirdParty: 1
+          };
+        }
+        
+        return {
+          ...participant,
+          stayRange: parsedStayRange
+        };
+      })
+    }))
+
+    return NextResponse.json(eventsWithParsedStayRange)
   } catch (error) {
     console.error('Error fetching events:', error)
     return NextResponse.json(

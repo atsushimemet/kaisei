@@ -13,8 +13,8 @@ export interface Participant {
   id: number
   eventId: number
   nickname: string
-  gender: 'male' | 'female' | 'unspecified'
-  role: 'senior' | 'junior' | 'flat'
+  gender: 'male' | 'female' | 'unspecified' | null
+  role: 'senior' | 'junior' | 'flat' | null
   stayRange: StayRange
   createdAt: Date
   settlements: Settlement[]
