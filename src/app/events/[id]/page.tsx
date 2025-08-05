@@ -543,7 +543,7 @@ export default function EventDetailPage() {
                     {editingVenue === venue.id ? (
                       // 編集フォーム
                       <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
-                        <div className="grid md:grid-cols-2 gap-3 mb-3">
+                        <div className="grid md:grid-cols-3 gap-3 mb-3">
                           <div>
                             <label className="text-xs text-gray-600">店名</label>
                             <input
@@ -564,21 +564,21 @@ export default function EventDetailPage() {
                               placeholder="総金額"
                             />
                           </div>
-                        </div>
-                        <div className="mb-3">
-                          <label className="text-xs text-gray-600">支払者</label>
-                          <select
-                            value={editVenueData?.paidBy || ''}
-                            onChange={(e) => setEditVenueData(prev => prev ? {...prev, paidBy: e.target.value} : null)}
-                            className="w-full px-2 py-1 border rounded text-sm"
-                          >
-                            <option value="">選択してください</option>
-                            {event.participants.map((participant) => (
-                              <option key={participant.id} value={participant.nickname}>
-                                {participant.nickname}
-                              </option>
-                            ))}
-                          </select>
+                          <div>
+                            <label className="text-xs text-gray-600">支払者</label>
+                            <select
+                              value={editVenueData?.paidBy || ''}
+                              onChange={(e) => setEditVenueData(prev => prev ? {...prev, paidBy: e.target.value} : null)}
+                              className="w-full px-2 py-1 border rounded text-sm"
+                            >
+                              <option value="">選択してください</option>
+                              {event.participants.map((participant) => (
+                                <option key={participant.id} value={participant.nickname}>
+                                  {participant.nickname}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                         <div className="mb-3">
                           <label className="text-xs text-gray-600">Google Maps URL (任意)</label>
@@ -652,7 +652,7 @@ export default function EventDetailPage() {
             {showAddVenue && (
               <div className="mt-4 p-3 bg-green-50 rounded-md border border-green-200">
                 <h4 className="font-medium text-gray-900 mb-3">新しいお店を追加</h4>
-                <div className="grid md:grid-cols-2 gap-3 mb-3">
+                <div className="grid md:grid-cols-3 gap-3 mb-3">
                   <div>
                     <label className="text-xs text-gray-600">店名</label>
                     <input
@@ -673,21 +673,21 @@ export default function EventDetailPage() {
                       placeholder="総金額"
                     />
                   </div>
-                </div>
-                <div className="mb-3">
-                  <label className="text-xs text-gray-600">支払者</label>
-                  <select
-                    value={newVenue.paidBy}
-                    onChange={(e) => setNewVenue(prev => ({...prev, paidBy: e.target.value}))}
-                    className="w-full px-2 py-1 border rounded text-sm"
-                  >
-                    <option value="">選択してください</option>
-                    {event.participants.map((participant) => (
-                      <option key={participant.id} value={participant.nickname}>
-                        {participant.nickname}
-                      </option>
-                    ))}
-                  </select>
+                  <div>
+                    <label className="text-xs text-gray-600">支払者</label>
+                    <select
+                      value={newVenue.paidBy}
+                      onChange={(e) => setNewVenue(prev => ({...prev, paidBy: e.target.value}))}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    >
+                      <option value="">選択してください</option>
+                      {event.participants.map((participant) => (
+                        <option key={participant.id} value={participant.nickname}>
+                          {participant.nickname}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="mb-3">
                   <label className="text-xs text-gray-600">Google Maps URL (任意)</label>
