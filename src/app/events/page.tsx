@@ -222,12 +222,6 @@ export default function EventsListPage() {
       {events.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-500 mb-4">まだ飲み会が作成されていません</div>
-          <Link
-            href="/events/new"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            新しい飲み会を作成
-          </Link>
         </div>
       ) : (
         <div className="space-y-4">
