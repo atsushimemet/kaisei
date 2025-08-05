@@ -24,6 +24,18 @@ export function getSettlementConfig(): SettlementRules {
   return DEFAULT_SETTLEMENT_RULES
 }
 
+// stayRangeを安全にパースする関数
+function parseStayRange(stayRange: any) {
+  if (typeof stayRange === 'string') {
+    try {
+      return JSON.parse(stayRange)
+    } catch {
+      return { firstParty: 1, secondParty: 1, thirdParty: 1 }
+    }
+  }
+  return stayRange
+}
+
 /**
  * 参加者の各会での支払い義務金額を計算
  */
@@ -37,17 +49,24 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
   console.log('🏪 [calculateSettlements] お店数:', venues.length)
   
   return participants.map(participant => {
+    // stayRangeを安全にパース
+    const parsedStayRange = parseStayRange(participant.stayRange)
+    
+    // genderとroleのデフォルト値を設定
+    const gender = participant.gender || 'unspecified'
+    const role = participant.role || 'flat'
+    
     console.log(`👤 [calculateSettlements] ${participant.nickname}さんの計算開始`)
     console.log(`📝 [calculateSettlements] ${participant.nickname}さんの参加率:`, {
-      firstParty: participant.stayRange.firstParty,
-      secondParty: participant.stayRange.secondParty,
-      thirdParty: participant.stayRange.thirdParty
+      firstParty: parsedStayRange.firstParty,
+      secondParty: parsedStayRange.secondParty,
+      thirdParty: parsedStayRange.thirdParty
     })
     console.log(`🔢 [calculateSettlements] ${participant.nickname}さんの調整係数:`, {
-      gender: participant.gender,
-      genderMultiplier: settlementConfig.genderMultiplier[participant.gender],
-      role: participant.role,
-      roleMultiplier: settlementConfig.roleMultiplier[participant.role]
+      gender: gender,
+      genderMultiplier: settlementConfig.genderMultiplier[gender],
+      role: role,
+      roleMultiplier: settlementConfig.roleMultiplier[role]
     })
     
     let totalAmount = 0
@@ -58,9 +77,9 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
       let stayRate = 0
 
       // 参加率を取得
-      if (partyNumber === 1) stayRate = participant.stayRange.firstParty
-      else if (partyNumber === 2) stayRate = participant.stayRange.secondParty  
-      else if (partyNumber === 3) stayRate = participant.stayRange.thirdParty
+      if (partyNumber === 1) stayRate = parsedStayRange.firstParty
+      else if (partyNumber === 2) stayRate = parsedStayRange.secondParty  
+      else if (partyNumber === 3) stayRate = parsedStayRange.thirdParty
 
       if (stayRate === 0) {
         console.log(`❌ [calculateSettlements] ${participant.nickname}さんは${partyNumber}次会に参加していません`)
@@ -74,14 +93,18 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
       // 同じ会に参加している人数の合計参加率を計算
       const totalParticipationRate = participants.reduce((sum, p) => {
         let rate = 0
-        if (partyNumber === 1) rate = p.stayRange.firstParty
-        else if (partyNumber === 2) rate = p.stayRange.secondParty
-        else if (partyNumber === 3) rate = p.stayRange.thirdParty
+        const pStayRange = parseStayRange(p.stayRange)
+        const pGender = p.gender || 'unspecified'
+        const pRole = p.role || 'flat'
+        
+        if (partyNumber === 1) rate = pStayRange.firstParty
+        else if (partyNumber === 2) rate = pStayRange.secondParty
+        else if (partyNumber === 3) rate = pStayRange.thirdParty
 
         if (rate > 0) {
           // 調整係数を適用
-          const genderMultiplier = settlementConfig.genderMultiplier[p.gender] || 1.0
-          const roleMultiplier = settlementConfig.roleMultiplier[p.role] || 1.0
+          const genderMultiplier = settlementConfig.genderMultiplier[pGender] || 1.0
+          const roleMultiplier = settlementConfig.roleMultiplier[pRole] || 1.0
           const adjustedRate = rate * genderMultiplier * roleMultiplier
           console.log(`📊 [calculateSettlements] ${p.nickname}さんの調整後参加率: ${rate} × ${genderMultiplier} × ${roleMultiplier} = ${adjustedRate}`)
           return sum + adjustedRate
@@ -96,8 +119,8 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
       console.log(`💰 [calculateSettlements] ${participant.nickname}さんの基本金額: (${venue.totalAmount} × ${stayRate}) ÷ ${totalParticipationRate} = ¥${baseAmount}`)
 
       // 調整係数を適用
-      const genderMultiplier = settlementConfig.genderMultiplier[participant.gender] || 1.0
-      const roleMultiplier = settlementConfig.roleMultiplier[participant.role] || 1.0
+      const genderMultiplier = settlementConfig.genderMultiplier[gender] || 1.0
+      const roleMultiplier = settlementConfig.roleMultiplier[role] || 1.0
       
       const adjustedAmount = baseAmount * genderMultiplier * roleMultiplier
       console.log(`💰 [calculateSettlements] ${participant.nickname}さんの調整後金額: ${baseAmount} × ${genderMultiplier} × ${roleMultiplier} = ¥${adjustedAmount}`)
