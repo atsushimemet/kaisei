@@ -827,7 +827,7 @@ export default function EventDetailPage() {
                         <div className="text-sm text-gray-600">負担総額</div>
                       </div>
                       <div className="text-center">
-                        <div className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        <div className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           ¥{formatCurrency(summary.balance)}
                         </div>
                         <div className="text-sm text-gray-600">差額</div>
