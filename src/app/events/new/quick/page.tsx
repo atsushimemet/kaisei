@@ -1,7 +1,7 @@
 'use client'
 
 import { DEFAULT_SETTLEMENT_RULES, SettlementRules } from '@/types'
-import { ArrowLeft, Copy, Download, HelpCircle, Plus, Save } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Copy, Download, HelpCircle, Plus, Save } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -23,7 +23,7 @@ interface QuickVenue {
   venueOrder: number
   name: string
   googleMapsUrl?: string
-  totalAmount: number | string // 0から空文字に変更
+  totalAmount: number | string
   paidBy: string
 }
 
@@ -57,6 +57,36 @@ function Tooltip({ children, content }: { children: React.ReactNode; content: st
   )
 }
 
+// ポップアップコンポーネント
+function Popup({ isOpen, onClose, title, message }: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  title: string; 
+  message: string; 
+}) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+        <div className="flex items-center space-x-3 mb-4">
+          <AlertCircle className="w-6 h-6 text-yellow-500" />
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        </div>
+        <p className="text-gray-700 mb-6">{message}</p>
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            了解
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function QuickEventPage() {
   const router = useRouter()
   const [event, setEvent] = useState<QuickEvent>({
@@ -68,6 +98,8 @@ export default function QuickEventPage() {
   const [rules, setRules] = useState<SettlementRules>(DEFAULT_SETTLEMENT_RULES)
   const [currentStep, setCurrentStep] = useState<'basic' | 'participants' | 'venues' | 'calculation'>('basic')
   const [calculationResult, setCalculationResult] = useState<any>(null)
+  const [showPopup, setShowPopup] = useState(false)
+  const [popupMessage, setPopupMessage] = useState('')
 
   useEffect(() => {
     // ローカルストレージから設定を読み込み
@@ -81,6 +113,36 @@ export default function QuickEventPage() {
       }
     }
   }, [])
+
+  // 参加者の滞在率から何次会まで発生するかを計算
+  const calculateMaxPartyCount = () => {
+    if (event.participants.length === 0) return 0
+
+    let maxParty = 0
+    event.participants.forEach(participant => {
+      if (participant.stayRange.firstParty > 0) maxParty = Math.max(maxParty, 1)
+      if (participant.stayRange.secondParty > 0) maxParty = Math.max(maxParty, 2)
+      if (participant.stayRange.thirdParty > 0) maxParty = Math.max(maxParty, 3)
+    })
+
+    return maxParty
+  }
+
+  // 滞在率が正しく設定されているかチェック
+  const validateStayRates = () => {
+    const unsetParticipants = event.participants.filter(p => 
+      p.stayRange.firstParty === 0 && p.stayRange.secondParty === 0 && p.stayRange.thirdParty === 0
+    )
+
+    if (unsetParticipants.length > 0) {
+      const names = unsetParticipants.map(p => p.nickname || '未設定').join('、')
+      setPopupMessage(`${names}の⚪︎次回滞在率が設定されていません。滞在率を設定してから会場を追加してください。`)
+      setShowPopup(true)
+      return false
+    }
+
+    return true
+  }
 
   const addParticipant = () => {
     const newParticipant: QuickParticipant = {
@@ -117,11 +179,25 @@ export default function QuickEventPage() {
   }
 
   const addVenue = () => {
+    // 滞在率の検証
+    if (!validateStayRates()) {
+      return
+    }
+
+    const maxParty = calculateMaxPartyCount()
+    const currentVenueCount = event.venues.length
+
+    if (currentVenueCount >= maxParty) {
+      setPopupMessage(`参加者の滞在率から計算すると、最大${maxParty}次会までしか設定できません。滞在率を調整してから会場を追加してください。`)
+      setShowPopup(true)
+      return
+    }
+
     const newVenue: QuickVenue = {
       id: Date.now().toString(),
-      venueOrder: event.venues.length + 1,
+      venueOrder: currentVenueCount + 1,
       name: '',
-      totalAmount: '', // 0から空文字に変更
+      totalAmount: '',
       paidBy: ''
     }
     setEvent(prev => ({
@@ -207,8 +283,15 @@ ${calculationResult.participants.map((p: any) =>
 KAISEI - 飲み会精算支援アプリ
     `.trim()
 
-    navigator.clipboard.writeText(resultText)
-    alert('精算結果をコピーしました！')
+    const blob = new Blob([resultText], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${calculationResult.event.title}_精算結果.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   const downloadResult = () => {
@@ -259,8 +342,18 @@ KAISEI - 飲み会精算支援アプリ
     alert('精算結果をローカルに保存しました！')
   }
 
+  const maxPartyCount = calculateMaxPartyCount()
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* ポップアップ */}
+      <Popup
+        isOpen={showPopup}
+        onClose={() => setShowPopup(false)}
+        title="滞在率の設定が必要です"
+        message={popupMessage}
+      />
+
       {/* ヘッダー */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
@@ -491,6 +584,19 @@ KAISEI - 飲み会精算支援アプリ
       {currentStep === 'venues' && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">会場</h2>
+          
+          {/* 滞在率情報表示 */}
+          {maxPartyCount > 0 && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                📊 参加者の滞在率から計算すると、<strong>{maxPartyCount}次会</strong>まで設定可能です。
+                {event.venues.length >= maxPartyCount && (
+                  <span className="text-orange-600 font-medium">（上限に達しています）</span>
+                )}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
             {event.venues.map((venue) => (
               <div key={venue.id} className="border border-gray-200 rounded-lg p-4">
@@ -541,7 +647,7 @@ KAISEI - 飲み会精算支援アプリ
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      順番
+                      ⚪︎次回
                     </label>
                     <input
                       type="number"
@@ -564,10 +670,18 @@ KAISEI - 飲み会精算支援アプリ
             ))}
             <button
               onClick={addVenue}
-              className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+              disabled={event.venues.length >= maxPartyCount}
+              className={`w-full py-3 border-2 border-dashed rounded-lg transition-colors ${
+                event.venues.length >= maxPartyCount
+                  ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600'
+              }`}
             >
               <Plus className="w-5 h-5 inline mr-2" />
-              会場を追加
+              {event.venues.length >= maxPartyCount 
+                ? `最大${maxPartyCount}次会まで設定済み` 
+                : '会場を追加'
+              }
             </button>
           </div>
           <div className="mt-6 flex justify-between">
@@ -653,10 +767,9 @@ KAISEI - 飲み会精算支援アプリ
           <div className="mt-8 text-center">
             <Link
               href="/"
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="text-blue-600 hover:text-blue-800 transition-colors text-sm"
             >
-              <ArrowLeft className="w-5 h-5" />
-              <span>ホームに戻る</span>
+              ホームに戻る
             </Link>
           </div>
         </div>
