@@ -20,9 +20,9 @@
 
 * 少人数でも「誰がどこまでいたか」「いくら払えばよいか」が混乱しがち
 * 会ごとに金額・参加者が異なるため計算が煩雑
+* 支払い者が複数に跨ると、誰から誰にいくら払えばいいかが、分かりづらくなりがち
 * 「男性が多めに払う」「先輩が多めに払う」といった**ローカルルールを反映できない**
 * 支払い方法が人によって異なり、調整や催促が面倒
-* 幹事自身が楽しめず「負担だけが残る」状態になる
 
 ---
 
@@ -38,14 +38,14 @@
   * 役割（先輩／後輩／フラット）
   * 滞在範囲（1次会のみ／2次会まで／3次会まで）
     　　※各会に「⚪︎次会途中」選択可能
+    　　※4次以降も入力可能
 
 ### 4.2 会ごとのお店登録
 
 * 会（1次会／2次会…）単位で、お店情報を登録：
-
   * 店名（自由入力＋Google Mapリンク）
   * 総金額（税込）
-  * 支払方法（例：現地現金／幹事が立替など）
+  * 支払者
 
 ### 4.3 傾斜配分機能
 
@@ -74,7 +74,7 @@
 　それ以外（現金、LINE Payなど）をご希望の方はこのメッセージに返信してください！
 　```
 
-* ※このメッセージは幹事がLINEやMessengerにそのまま貼れる形式で出力される
+* ※このメッセージは幹事がLINEにそのまま貼れる形式で出力される
 
 ### 4.5 PayPay支払いリンクガイド（初期プロダクト）
 
@@ -167,20 +167,20 @@ cp env.example .env
 
 ```bash
 # 開発環境の起動
-docker-compose up --build
+docker compose up --build
 
 # バックグラウンドで起動する場合
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### 4. データベースの初期化
 
 ```bash
 # Prismaクライアントの生成
-docker-compose exec app-dev npx prisma generate
+docker compose exec app-dev npx prisma generate
 
 # データベースマイグレーション
-docker-compose exec app-dev npx prisma db push
+docker compose exec app-dev npx prisma db push
 ```
 
 ### 5. アプリケーションへのアクセス
@@ -194,21 +194,21 @@ docker-compose exec app-dev npx prisma db push
 
 ```bash
 # 開発環境の起動
-docker-compose up
+docker compose up
 
 # 開発環境の停止
-docker-compose down
+docker compose down
 
 # ログの確認
-docker-compose logs -f app-dev
+docker compose logs -f app-dev
 
 # データベースのリセット
-docker-compose down -v
-docker-compose up --build
+docker compose down -v
+docker compose up --build
 
 # コンテナ内でコマンド実行
-docker-compose exec app-dev npm run lint
-docker-compose exec app-dev npx prisma studio
+docker compose exec app-dev npm run lint
+docker compose exec app-dev npx prisma studio
 ```
 
 ---
@@ -261,14 +261,6 @@ kaisei/
 
 ---
 
-## 14. 貢献
-
-1. 新しいブランチを作成
-2. 変更をコミット
-3. プルリクエストを作成
-
----
-
-## 15. ライセンス
+## 14. ライセンス
 
 このプロジェクトはMITライセンスの下で公開されています。
