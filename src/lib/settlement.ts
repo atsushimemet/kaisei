@@ -37,6 +37,70 @@ function parseStayRange(stayRange: any) {
 }
 
 /**
+ * クイック精算用の簡略版計算関数
+ */
+export function calculateQuickSettlement(
+  participants: Array<{
+    id: string
+    nickname: string
+    gender: 'male' | 'female' | 'unspecified'
+    role: 'senior' | 'junior' | 'flat'
+    stayRange: {
+      firstParty: number
+      secondParty: number
+      thirdParty: number
+    }
+  }>,
+  venues: Array<{
+    id: string
+    totalAmount: number | string
+  }>,
+  rules: SettlementRules
+): any {
+  console.log('⚡ [calculateQuickSettlement] クイック精算計算開始')
+  console.log('📊 [calculateQuickSettlement] 使用する設定:', rules)
+  console.log('👥 [calculateQuickSettlement] 参加者数:', participants.length)
+  console.log('🏪 [calculateQuickSettlement] お店数:', venues.length)
+
+  const totalAmount = venues.reduce((sum, venue) => {
+    const amount = typeof venue.totalAmount === 'string' ? parseInt(venue.totalAmount) || 0 : venue.totalAmount
+    return sum + amount
+  }, 0)
+
+  const calculatedParticipants = participants.map(p => {
+    const genderMultiplier = rules.genderMultiplier[p.gender] || 1.0
+    const roleMultiplier = rules.roleMultiplier[p.role] || 1.0
+    const multiplier = 
+      genderMultiplier * 
+      roleMultiplier * 
+      (p.stayRange.firstParty + p.stayRange.secondParty + p.stayRange.thirdParty) / 3
+    
+    return {
+      ...p,
+      multiplier,
+      amount: Math.round((totalAmount / participants.reduce((sum, p2) => {
+        const p2GenderMultiplier = rules.genderMultiplier[p2.gender] || 1.0
+        const p2RoleMultiplier = rules.roleMultiplier[p2.role] || 1.0
+        const m2 = p2GenderMultiplier * 
+                  p2RoleMultiplier * 
+                  (p2.stayRange.firstParty + p2.stayRange.secondParty + p2.stayRange.thirdParty) / 3
+        return sum + m2
+      }, 0)) * multiplier)
+    }
+  })
+
+  console.log('✅ [calculateQuickSettlement] クイック精算計算完了')
+  console.log('💰 [calculateQuickSettlement] 総額:', totalAmount)
+  console.log('👥 [calculateQuickSettlement] 参加者別金額:', calculatedParticipants.map(p => `${p.nickname}: ¥${p.amount}`))
+
+  return {
+    participants: calculatedParticipants,
+    totalAmount,
+    rules
+  }
+}
+
+/**
  * 参加者の各会での支払い義務金額を計算
  */
 export function calculateSettlements(event: Event, config?: SettlementRules): SettlementCalculation[] {
@@ -283,5 +347,81 @@ export function calculateFullSettlement(event: Event, config?: SettlementRules) 
     settlements,
     paymentSummaries,
     transfers
+  }
+}
+
+/**
+ * クイック精算の結果をログイン済み版と同じ形式に変換
+ */
+export function convertQuickSettlementToDetailedFormat(
+  participants: Array<{
+    id: string
+    nickname: string
+    gender: 'male' | 'female' | 'unspecified'
+    role: 'senior' | 'junior' | 'flat'
+    stayRange: {
+      firstParty: number
+      secondParty: number
+      thirdParty: number
+    }
+  }>,
+  venues: Array<{
+    id: string
+    venueOrder: number
+    name: string
+    totalAmount: number | string
+    paidBy: string
+  }>,
+  rules: SettlementRules
+) {
+  console.log('🔄 [convertQuickSettlementToDetailedFormat] クイック精算結果の変換開始')
+
+  // Event形式に変換（型エラーを避けるため、必要なフィールドを追加）
+  const eventData: Event = {
+    id: 0,
+    title: 'クイック精算',
+    eventDate: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    participants: participants.map((p, index) => ({
+      ...p,
+      id: parseInt(p.id) || (index + 1), // IDが数値変換できない場合はインデックス+1を使用
+      eventId: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      settlements: []
+    })),
+    venues: venues.map((v, index) => ({
+      ...v,
+      id: parseInt(v.id) || (index + 1), // IDが数値変換できない場合はインデックス+1を使用
+      eventId: 0,
+      totalAmount: typeof v.totalAmount === 'string' ? parseInt(v.totalAmount) || 0 : v.totalAmount,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })),
+    settlements: []
+  }
+
+  // 詳細な精算計算を実行
+  const result = calculateFullSettlement(eventData, rules)
+
+  console.log('✅ [convertQuickSettlementToDetailedFormat] 変換完了')
+  
+  return {
+    event: {
+      id: eventData.id,
+      title: eventData.title,
+      eventDate: eventData.eventDate.toISOString().split('T')[0],
+      venues: eventData.venues.map(v => ({
+        id: v.id,
+        venueOrder: v.venueOrder,
+        name: v.name,
+        totalAmount: v.totalAmount,
+        paidBy: v.paidBy
+      }))
+    },
+    settlements: result.settlements,
+    paymentSummaries: result.paymentSummaries,
+    transfers: result.transfers
   }
 }

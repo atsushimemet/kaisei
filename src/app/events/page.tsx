@@ -1,7 +1,7 @@
 'use client'
 
 import { Event } from '@/types'
-import { Calendar, Loader2, LogIn, MapPin, Users } from 'lucide-react'
+import { AlertTriangle, Calendar, Loader2, LogIn, MapPin, Trash2, Users } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,8 @@ export default function EventsListPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deletingEventId, setDeletingEventId] = useState<number | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null)
   const { data: session, status } = useSession()
   const router = useRouter()
 
@@ -39,6 +41,39 @@ export default function EventsListPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleDeleteClick = (eventId: number) => {
+    setShowDeleteConfirm(eventId)
+  }
+
+  const handleDeleteConfirm = async (eventId: number) => {
+    setDeletingEventId(eventId)
+    setShowDeleteConfirm(null)
+    
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // 削除成功：イベントリストから削除
+        setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId))
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to delete event:', errorData)
+        alert('イベントの削除に失敗しました')
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error)
+      alert('イベントの削除中にエラーが発生しました')
+    } finally {
+      setDeletingEventId(null)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(null)
   }
 
   const formatDate = (dateInput: string | Date) => {
@@ -187,58 +222,109 @@ export default function EventsListPage() {
       {events.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-500 mb-4">まだ飲み会が作成されていません</div>
-          <Link
-            href="/events/new"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            新しい飲み会を作成
-          </Link>
         </div>
       ) : (
         <div className="space-y-4">
           {events.map((event) => (
-            <Link
+            <div
               key={event.id}
-              href={`/events/${event.id}`}
-              className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border hover:border-blue-300"
+              className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border hover:border-blue-300 relative"
             >
+              {/* 削除確認ダイアログ */}
+              {showDeleteConfirm === event.id && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg z-10">
+                  <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-4">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <AlertTriangle className="w-6 h-6 text-red-500" />
+                      <h3 className="text-lg font-semibold text-gray-900">削除の確認</h3>
+                    </div>
+                    <p className="text-gray-600 mb-6">
+                      「{event.title}」を削除しますか？
+                      <br />
+                      この操作は取り消せません。
+                    </p>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={handleDeleteCancel}
+                        className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        onClick={() => handleDeleteConfirm(event.id)}
+                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-start justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors">
-                  {event.title}
-                </h2>
-                <div className="text-sm text-gray-500">
-                  {formatDate(event.eventDate)}
+                <Link
+                  href={`/events/${event.id}`}
+                  className="flex-1"
+                >
+                  <h2 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                    {event.title}
+                  </h2>
+                </Link>
+                
+                <div className="flex items-center space-x-2">
+                  <div className="text-sm text-gray-500">
+                    {formatDate(event.eventDate)}
+                  </div>
+                  
+                  {/* 削除ボタン */}
+                  <button
+                    onClick={() => handleDeleteClick(event.id)}
+                    disabled={deletingEventId === event.id}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="削除"
+                  >
+                    {deletingEventId === event.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>{formatDate(event.eventDate)}</span>
+              <Link
+                href={`/events/${event.id}`}
+                className="block"
+              >
+                <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>{formatDate(event.eventDate)}</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-4 h-4" />
+                    <span>{event.participants.length}名参加</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>{event.venues.length}次会まで</span>
+                  </div>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4" />
-                  <span>{event.participants.length}名参加</span>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>{event.venues.length}次会まで</span>
-                </div>
-              </div>
 
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="text-gray-600">
-                    総額: ¥{formatCurrency(event.venues.reduce((sum, venue) => sum + venue.totalAmount, 0))}
-                  </div>
-                  <div className="text-blue-600 font-medium">
-                    詳細を見る →
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="text-gray-600">
+                      総額: ¥{formatCurrency(event.venues.reduce((sum, venue) => sum + venue.totalAmount, 0))}
+                    </div>
+                    <div className="text-blue-600 font-medium">
+                      詳細を見る →
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
       )}

@@ -6,7 +6,7 @@ const nextConfig = {
   },
   // CSS optimization for development
   experimental: {
-    optimizeCss: true,
+    optimizeCss: false,
   },
   // Improve CSS loading in development
   webpack: (config, { dev }) => {

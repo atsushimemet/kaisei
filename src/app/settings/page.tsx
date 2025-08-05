@@ -1,14 +1,14 @@
 'use client'
 
 import { DEFAULT_SETTLEMENT_RULES, SettlementRules } from '@/types'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function SettingsPage() {
   const router = useRouter()
   const [rules, setRules] = useState<SettlementRules>(DEFAULT_SETTLEMENT_RULES)
-  const [saved, setSaved] = useState(false)
+  const [showSavedMessage, setShowSavedMessage] = useState(false)
   const [fromNewEventPage, setFromNewEventPage] = useState(false)
 
   useEffect(() => {
@@ -56,46 +56,56 @@ export default function SettingsPage() {
     router.push('/events/new')
   }
 
-  const handleSave = () => {
-    const configToSave = JSON.stringify(rules)
-    console.log('Saving settings to localStorage:', configToSave)
+  // 自動保存機能
+  const autoSave = (newRules: SettlementRules) => {
+    const configToSave = JSON.stringify(newRules)
+    console.log('Auto-saving settings to localStorage:', configToSave)
     localStorage.setItem('settlementRules', configToSave)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    
+    // 保存完了メッセージを表示
+    setShowSavedMessage(true)
+    setTimeout(() => setShowSavedMessage(false), 2000)
   }
 
   const handleReset = () => {
     setRules(DEFAULT_SETTLEMENT_RULES)
+    autoSave(DEFAULT_SETTLEMENT_RULES)
   }
 
   const updateGenderMultiplier = (gender: keyof SettlementRules['genderMultiplier'], value: number) => {
-    setRules(prev => ({
-      ...prev,
+    const newRules = {
+      ...rules,
       genderMultiplier: {
-        ...prev.genderMultiplier,
+        ...rules.genderMultiplier,
         [gender]: value
       }
-    }))
+    }
+    setRules(newRules)
+    autoSave(newRules)
   }
 
   const updateRoleMultiplier = (role: keyof SettlementRules['roleMultiplier'], value: number) => {
-    setRules(prev => ({
-      ...prev,
+    const newRules = {
+      ...rules,
       roleMultiplier: {
-        ...prev.roleMultiplier,
+        ...rules.roleMultiplier,
         [role]: value
       }
-    }))
+    }
+    setRules(newRules)
+    autoSave(newRules)
   }
 
   const updateStayRangeMultiplier = (range: keyof SettlementRules['stayRangeMultiplier'], value: number) => {
-    setRules(prev => ({
-      ...prev,
+    const newRules = {
+      ...rules,
       stayRangeMultiplier: {
-        ...prev.stayRangeMultiplier,
+        ...rules.stayRangeMultiplier,
         [range]: value
       }
-    }))
+    }
+    setRules(newRules)
+    autoSave(newRules)
   }
 
   return (
@@ -274,14 +284,7 @@ export default function SettingsPage() {
         </div>
 
         {/* アクションボタン */}
-        <div className="flex justify-center space-x-4">
-          <button
-            onClick={handleSave}
-            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Save className="w-5 h-5 inline mr-2" />
-            設定を保存
-          </button>
+        <div className="flex justify-center">
           <button
             onClick={handleReset}
             className="px-6 py-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
@@ -454,10 +457,11 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* 保存完了メッセージ */}
-        {saved && (
-          <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
-            設定を保存しました
+        {/* 自動保存完了メッセージ */}
+        {showSavedMessage && (
+          <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 z-50">
+            <CheckCircle className="w-5 h-5" />
+            <span>設定を自動保存しました</span>
           </div>
         )}
       </div>

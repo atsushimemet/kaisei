@@ -1,7 +1,7 @@
 'use client'
 
-import { ArrowLeft, Calculator, Chrome, List, Shield, Users } from 'lucide-react'
-import { getProviders, signIn } from 'next-auth/react'
+import { ArrowLeft, Calculator, Chrome, List, Shield } from 'lucide-react'
+import { getProviders, signIn, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -11,15 +11,23 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
   const callbackUrl = searchParams.get('callbackUrl') || '/events'
 
   useEffect(() => {
+    // ログイン済みの場合は適切なページにリダイレクト
+    if (status === 'authenticated' && session) {
+      console.log('✅ [SignInPage] ログイン済みユーザーをリダイレクト:', session.user?.name)
+      router.push(callbackUrl)
+      return
+    }
+
     const fetchProviders = async () => {
       const res = await getProviders()
       setProviders(res)
     }
     fetchProviders()
-  }, [])
+  }, [session, status, router, callbackUrl])
 
   const handleSignIn = async (providerId: string) => {
     setLoading(true)
@@ -29,6 +37,18 @@ export default function SignInPage() {
       console.error('Sign in error:', error)
       setLoading(false)
     }
+  }
+
+  // ログイン済みの場合はローディング表示
+  if (status === 'authenticated') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">リダイレクト中...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -78,21 +98,12 @@ export default function SignInPage() {
             </h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Users className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">飲み会作成・管理</h4>
-                  <p className="text-xs text-gray-500">新しい飲み会を作成して参加者を管理</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
                   <List className="w-4 h-4 text-orange-600" />
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-gray-700">飲み会一覧の確認</h4>
-                  <p className="text-xs text-gray-500">作成した飲み会の一覧を確認・管理</p>
+                  <p className="text-xs text-gray-500">過去に作成した飲み会の一覧を確認・管理</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
