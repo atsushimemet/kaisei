@@ -1,7 +1,7 @@
 'use client'
 
-import { Event, SettlementCalculation, PaymentSummary, SettlementTransfer } from '@/types'
-import { Calculator, Copy, MessageSquare, ArrowRight } from 'lucide-react'
+import { Event, SettlementCalculation, PaymentSummary, SettlementTransfer, Participant, Venue } from '@/types'
+import { Calculator, Copy, MessageSquare, ArrowRight, Edit, Plus, Save, X, Trash2 } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -13,6 +13,27 @@ export default function EventDetailPage() {
   const [transfers, setTransfers] = useState<SettlementTransfer[]>([])
   const [loading, setLoading] = useState(true)
   const [calculating, setCalculating] = useState(false)
+  
+  // 編集状態管理
+  const [editingParticipant, setEditingParticipant] = useState<number | null>(null)
+  const [editingVenue, setEditingVenue] = useState<number | null>(null)
+  const [editParticipantData, setEditParticipantData] = useState<Participant | null>(null)
+  const [editVenueData, setEditVenueData] = useState<Venue | null>(null)
+  const [showAddParticipant, setShowAddParticipant] = useState(false)
+  const [showAddVenue, setShowAddVenue] = useState(false)
+  const [newParticipant, setNewParticipant] = useState({
+    nickname: '',
+    gender: 'unspecified' as const,
+    role: 'flat' as const,
+    stayRange: { firstParty: 1.0, secondParty: 0.0, thirdParty: 0.0 }
+  })
+  const [newVenue, setNewVenue] = useState({
+    venueOrder: 1,
+    name: '',
+    googleMapsUrl: '',
+    totalAmount: 0,
+    paidBy: ''
+  })
 
   useEffect(() => {
     fetchEvent()
@@ -113,6 +134,179 @@ export default function EventDetailPage() {
     return message
   }
 
+  // 参加者編集機能
+  const startEditParticipant = (participant: Participant) => {
+    setEditingParticipant(participant.id)
+    setEditParticipantData({ ...participant })
+  }
+
+  const cancelEditParticipant = () => {
+    setEditingParticipant(null)
+    setEditParticipantData(null)
+  }
+
+  const saveParticipant = async () => {
+    if (!editParticipantData || !editingParticipant) return
+
+    try {
+      const response = await fetch(`/api/participants/${editingParticipant}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nickname: editParticipantData.nickname,
+          gender: editParticipantData.gender,
+          role: editParticipantData.role,
+          stayRange: editParticipantData.stayRange,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchEvent()
+        setEditingParticipant(null)
+        setEditParticipantData(null)
+      } else {
+        alert('参加者の更新に失敗しました')
+      }
+    } catch (error) {
+      console.error('Error updating participant:', error)
+      alert('エラーが発生しました')
+    }
+  }
+
+  const deleteParticipant = async (participantId: number) => {
+    if (!confirm('この参加者を削除しますか？')) return
+
+    try {
+      const response = await fetch(`/api/participants/${participantId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        await fetchEvent()
+      } else {
+        alert('参加者の削除に失敗しました')
+      }
+    } catch (error) {
+      console.error('Error deleting participant:', error)
+      alert('エラーが発生しました')
+    }
+  }
+
+  const addParticipant = async () => {
+    if (!newParticipant.nickname.trim()) return
+
+    try {
+      const response = await fetch(`/api/events/${params.id}/participants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newParticipant),
+      })
+
+      if (response.ok) {
+        await fetchEvent()
+        setShowAddParticipant(false)
+        setNewParticipant({
+          nickname: '',
+          gender: 'unspecified',
+          role: 'flat',
+          stayRange: { firstParty: 1.0, secondParty: 0.0, thirdParty: 0.0 }
+        })
+      } else {
+        alert('参加者の追加に失敗しました')
+      }
+    } catch (error) {
+      console.error('Error adding participant:', error)
+      alert('エラーが発生しました')
+    }
+  }
+
+  // お店編集機能
+  const startEditVenue = (venue: Venue) => {
+    setEditingVenue(venue.id)
+    setEditVenueData({ ...venue })
+  }
+
+  const cancelEditVenue = () => {
+    setEditingVenue(null)
+    setEditVenueData(null)
+  }
+
+  const saveVenue = async () => {
+    if (!editVenueData || !editingVenue) return
+
+    try {
+      const response = await fetch(`/api/venues/${editingVenue}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editVenueData.name,
+          googleMapsUrl: editVenueData.googleMapsUrl,
+          totalAmount: editVenueData.totalAmount,
+          paidBy: editVenueData.paidBy,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchEvent()
+        setEditingVenue(null)
+        setEditVenueData(null)
+      } else {
+        alert('お店情報の更新に失敗しました')
+      }
+    } catch (error) {
+      console.error('Error updating venue:', error)
+      alert('エラーが発生しました')
+    }
+  }
+
+  const deleteVenue = async (venueId: number) => {
+    if (!confirm('このお店を削除しますか？')) return
+
+    try {
+      const response = await fetch(`/api/venues/${venueId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        await fetchEvent()
+      } else {
+        alert('お店の削除に失敗しました')
+      }
+    } catch (error) {
+      console.error('Error deleting venue:', error)
+      alert('エラーが発生しました')
+    }
+  }
+
+  const addVenue = async () => {
+    if (!newVenue.name.trim() || !newVenue.paidBy.trim() || newVenue.totalAmount <= 0) return
+
+    try {
+      const response = await fetch(`/api/events/${params.id}/venues`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newVenue),
+      })
+
+      if (response.ok) {
+        await fetchEvent()
+        setShowAddVenue(false)
+        setNewVenue({
+          venueOrder: (event?.venues.length || 0) + 1,
+          name: '',
+          googleMapsUrl: '',
+          totalAmount: 0,
+          paidBy: ''
+        })
+      } else {
+        alert('お店の追加に失敗しました')
+      }
+    } catch (error) {
+      console.error('Error adding venue:', error)
+      alert('エラーが発生しました')
+    }
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -142,43 +336,445 @@ export default function EventDetailPage() {
       <div className="grid lg:grid-cols-2 gap-8">
         {/* 参加者情報 */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">参加者</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">参加者</h2>
+            <button
+              onClick={() => setShowAddParticipant(true)}
+              className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 inline mr-1" />
+              追加
+            </button>
+          </div>
+          
           <div className="space-y-3">
             {event.participants.map((participant) => (
-              <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div>
-                  <span className="font-medium">{participant.nickname}</span>
-                  <span className="text-sm text-gray-500 ml-2">
-                    ({participant.gender === 'male' ? '男性' : participant.gender === 'female' ? '女性' : '未設定'} / 
-                    {participant.role === 'senior' ? '先輩' : participant.role === 'junior' ? '後輩' : 'フラット'})
-                  </span>
-                </div>
-                <div className="text-sm text-gray-500">
-                  {participant.stayRange.firstParty && '1次会'}
-                  {participant.stayRange.secondParty && ' 2次会'}
-                  {participant.stayRange.thirdParty && ' 3次会'}
-                </div>
+              <div key={participant.id}>
+                {editingParticipant === participant.id ? (
+                  // 編集フォーム
+                  <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
+                    <div className="grid md:grid-cols-3 gap-3 mb-3">
+                      <input
+                        type="text"
+                        value={editParticipantData?.nickname || ''}
+                        onChange={(e) => setEditParticipantData(prev => prev ? {...prev, nickname: e.target.value} : null)}
+                        className="px-2 py-1 border rounded text-sm"
+                        placeholder="ニックネーム"
+                      />
+                      <select
+                        value={editParticipantData?.gender || 'unspecified'}
+                        onChange={(e) => setEditParticipantData(prev => prev ? {...prev, gender: e.target.value as any} : null)}
+                        className="px-2 py-1 border rounded text-sm"
+                      >
+                        <option value="unspecified">未設定</option>
+                        <option value="male">男性</option>
+                        <option value="female">女性</option>
+                      </select>
+                      <select
+                        value={editParticipantData?.role || 'flat'}
+                        onChange={(e) => setEditParticipantData(prev => prev ? {...prev, role: e.target.value as any} : null)}
+                        className="px-2 py-1 border rounded text-sm"
+                      >
+                        <option value="flat">フラット</option>
+                        <option value="senior">先輩</option>
+                        <option value="junior">後輩</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      <div>
+                        <label className="text-xs text-gray-600">1次会</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="1"
+                          value={editParticipantData?.stayRange.firstParty || 0}
+                          onChange={(e) => setEditParticipantData(prev => prev ? {
+                            ...prev,
+                            stayRange: { ...prev.stayRange, firstParty: parseFloat(e.target.value) }
+                          } : null)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">2次会</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="1"
+                          value={editParticipantData?.stayRange.secondParty || 0}
+                          onChange={(e) => setEditParticipantData(prev => prev ? {
+                            ...prev,
+                            stayRange: { ...prev.stayRange, secondParty: parseFloat(e.target.value) }
+                          } : null)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">3次会</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="1"
+                          value={editParticipantData?.stayRange.thirdParty || 0}
+                          onChange={(e) => setEditParticipantData(prev => prev ? {
+                            ...prev,
+                            stayRange: { ...prev.stayRange, thirdParty: parseFloat(e.target.value) }
+                          } : null)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={saveParticipant}
+                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                      >
+                        <Save className="w-3 h-3 inline mr-1" />
+                        保存
+                      </button>
+                      <button
+                        onClick={cancelEditParticipant}
+                        className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+                      >
+                        <X className="w-3 h-3 inline mr-1" />
+                        キャンセル
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // 表示モード
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div>
+                      <span className="font-medium">{participant.nickname}</span>
+                      <span className="text-sm text-gray-500 ml-2">
+                        ({participant.gender === 'male' ? '男性' : participant.gender === 'female' ? '女性' : '未設定'} / 
+                        {participant.role === 'senior' ? '先輩' : participant.role === 'junior' ? '後輩' : 'フラット'})
+                      </span>
+                      <div className="text-xs text-gray-400 mt-1">
+                        参加: {participant.stayRange.firstParty > 0 ? '1次会' : ''}
+                        {participant.stayRange.secondParty > 0 ? (participant.stayRange.firstParty > 0 ? ', 2次会' : '2次会') : ''}
+                        {participant.stayRange.thirdParty > 0 ? (participant.stayRange.firstParty > 0 || participant.stayRange.secondParty > 0 ? ', 3次会' : '3次会') : ''}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => startEditParticipant(participant)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteParticipant(participant.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
+          
+          {/* 参加者追加フォーム */}
+          {showAddParticipant && (
+            <div className="mt-4 p-3 bg-green-50 rounded-md border border-green-200">
+              <h4 className="font-medium text-gray-900 mb-3">新しい参加者を追加</h4>
+              <div className="grid md:grid-cols-3 gap-3 mb-3">
+                <input
+                  type="text"
+                  value={newParticipant.nickname}
+                  onChange={(e) => setNewParticipant(prev => ({...prev, nickname: e.target.value}))}
+                  className="px-2 py-1 border rounded text-sm"
+                  placeholder="ニックネーム"
+                />
+                <select
+                  value={newParticipant.gender}
+                  onChange={(e) => setNewParticipant(prev => ({...prev, gender: e.target.value as any}))}
+                  className="px-2 py-1 border rounded text-sm"
+                >
+                  <option value="unspecified">未設定</option>
+                  <option value="male">男性</option>
+                  <option value="female">女性</option>
+                </select>
+                <select
+                  value={newParticipant.role}
+                  onChange={(e) => setNewParticipant(prev => ({...prev, role: e.target.value as any}))}
+                  className="px-2 py-1 border rounded text-sm"
+                >
+                  <option value="flat">フラット</option>
+                  <option value="senior">先輩</option>
+                  <option value="junior">後輩</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div>
+                  <label className="text-xs text-gray-600">1次会参加率</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="1"
+                    value={newParticipant.stayRange.firstParty}
+                    onChange={(e) => setNewParticipant(prev => ({
+                      ...prev,
+                      stayRange: { ...prev.stayRange, firstParty: parseFloat(e.target.value) }
+                    }))}
+                    className="w-full px-2 py-1 border rounded text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600">2次会参加率</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="1"
+                    value={newParticipant.stayRange.secondParty}
+                    onChange={(e) => setNewParticipant(prev => ({
+                      ...prev,
+                      stayRange: { ...prev.stayRange, secondParty: parseFloat(e.target.value) }
+                    }))}
+                    className="w-full px-2 py-1 border rounded text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600">3次会参加率</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="1"
+                    value={newParticipant.stayRange.thirdParty}
+                    onChange={(e) => setNewParticipant(prev => ({
+                      ...prev,
+                      stayRange: { ...prev.stayRange, thirdParty: parseFloat(e.target.value) }
+                    }))}
+                    className="w-full px-2 py-1 border rounded text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={addParticipant}
+                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                >
+                  <Plus className="w-3 h-3 inline mr-1" />
+                  追加
+                </button>
+                <button
+                  onClick={() => setShowAddParticipant(false)}
+                  className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+                >
+                  <X className="w-3 h-3 inline mr-1" />
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* お店情報 */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">お店</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">お店</h2>
+            <button
+              onClick={() => {
+                setNewVenue(prev => ({
+                  ...prev,
+                  venueOrder: (event.venues.length || 0) + 1
+                }))
+                setShowAddVenue(true)
+              }}
+              className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 inline mr-1" />
+              追加
+            </button>
+          </div>
+          
           <div className="space-y-3">
             {event.venues.map((venue) => (
-              <div key={venue.id} className="p-3 bg-gray-50 rounded-md">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">{venue.venueOrder}次会: {venue.name}</span>
-                  <span className="text-lg font-semibold text-blue-600">
-                    ¥{formatCurrency(venue.totalAmount)}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500">支払者: {venue.paidBy}さん</p>
+              <div key={venue.id}>
+                {editingVenue === venue.id ? (
+                  // 編集フォーム
+                  <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
+                    <div className="grid md:grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="text-xs text-gray-600">店名</label>
+                        <input
+                          type="text"
+                          value={editVenueData?.name || ''}
+                          onChange={(e) => setEditVenueData(prev => prev ? {...prev, name: e.target.value} : null)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                          placeholder="店名"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">総金額</label>
+                        <input
+                          type="number"
+                          value={editVenueData?.totalAmount || 0}
+                          onChange={(e) => setEditVenueData(prev => prev ? {...prev, totalAmount: parseInt(e.target.value) || 0} : null)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                          placeholder="総金額"
+                        />
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="text-xs text-gray-600">支払者</label>
+                      <select
+                        value={editVenueData?.paidBy || ''}
+                        onChange={(e) => setEditVenueData(prev => prev ? {...prev, paidBy: e.target.value} : null)}
+                        className="w-full px-2 py-1 border rounded text-sm"
+                      >
+                        <option value="">選択してください</option>
+                        {event.participants.map((participant) => (
+                          <option key={participant.id} value={participant.nickname}>
+                            {participant.nickname}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="text-xs text-gray-600">Google Maps URL (任意)</label>
+                      <input
+                        type="url"
+                        value={editVenueData?.googleMapsUrl || ''}
+                        onChange={(e) => setEditVenueData(prev => prev ? {...prev, googleMapsUrl: e.target.value} : null)}
+                        className="w-full px-2 py-1 border rounded text-sm"
+                        placeholder="https://maps.google.com/..."
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={saveVenue}
+                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                      >
+                        <Save className="w-3 h-3 inline mr-1" />
+                        保存
+                      </button>
+                      <button
+                        onClick={cancelEditVenue}
+                        className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+                      >
+                        <X className="w-3 h-3 inline mr-1" />
+                        キャンセル
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // 表示モード
+                  <div className="p-3 bg-gray-50 rounded-md">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{venue.venueOrder}次会: {venue.name}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg font-semibold text-blue-600">
+                          ¥{formatCurrency(venue.totalAmount)}
+                        </span>
+                        <button
+                          onClick={() => startEditVenue(venue)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteVenue(venue.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500">支払者: {venue.paidBy}さん</p>
+                    {venue.googleMapsUrl && (
+                      <a
+                        href={venue.googleMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        Google Mapsで開く
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
+          
+          {/* お店追加フォーム */}
+          {showAddVenue && (
+            <div className="mt-4 p-3 bg-green-50 rounded-md border border-green-200">
+              <h4 className="font-medium text-gray-900 mb-3">新しいお店を追加</h4>
+              <div className="grid md:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="text-xs text-gray-600">店名</label>
+                  <input
+                    type="text"
+                    value={newVenue.name}
+                    onChange={(e) => setNewVenue(prev => ({...prev, name: e.target.value}))}
+                    className="w-full px-2 py-1 border rounded text-sm"
+                    placeholder="店名"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600">総金額</label>
+                  <input
+                    type="number"
+                    value={newVenue.totalAmount}
+                    onChange={(e) => setNewVenue(prev => ({...prev, totalAmount: parseInt(e.target.value) || 0}))}
+                    className="w-full px-2 py-1 border rounded text-sm"
+                    placeholder="総金額"
+                  />
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="text-xs text-gray-600">支払者</label>
+                <select
+                  value={newVenue.paidBy}
+                  onChange={(e) => setNewVenue(prev => ({...prev, paidBy: e.target.value}))}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                >
+                  <option value="">選択してください</option>
+                  {event.participants.map((participant) => (
+                    <option key={participant.id} value={participant.nickname}>
+                      {participant.nickname}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-3">
+                <label className="text-xs text-gray-600">Google Maps URL (任意)</label>
+                <input
+                  type="url"
+                  value={newVenue.googleMapsUrl}
+                  onChange={(e) => setNewVenue(prev => ({...prev, googleMapsUrl: e.target.value}))}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={addVenue}
+                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                >
+                  <Plus className="w-3 h-3 inline mr-1" />
+                  追加
+                </button>
+                <button
+                  onClick={() => setShowAddVenue(false)}
+                  className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+                >
+                  <X className="w-3 h-3 inline mr-1" />
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
