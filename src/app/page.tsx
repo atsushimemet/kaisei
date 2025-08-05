@@ -1,5 +1,5 @@
 import ClientLogger from '@/components/ClientLogger'
-import { Calculator, CreditCard, Plus, Users } from 'lucide-react'
+import { Calculator, CreditCard, LogIn, Plus, Users, Zap } from 'lucide-react'
 import Link from 'next/link'
 
 export default function HomePage() {
@@ -70,22 +70,131 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* CTA */}
-          <section className="text-center">
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                新しい飲み会を始めましょう
-              </h2>
-              <p className="text-gray-600 mb-6">
-                幹事の負担を軽減し、透明性のある精算を実現します
-              </p>
-              <Link
-                href="/events/new"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                飲み会を作成
-              </Link>
+          {/* 利用方法の選択 */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+              利用方法を選択してください
+            </h2>
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* ログインなしで精算 */}
+              <div className="bg-white p-8 rounded-lg shadow-md border-2 border-blue-200">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Zap className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    すぐに精算を始める
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    ログイン不要で一度きりの精算を実行
+                  </p>
+                </div>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-700">すぐに精算を開始</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-700">データは保存されません</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-700">結果をコピーして共有</span>
+                  </div>
+                </div>
+
+                <Link
+                  href="/events/new/quick"
+                  className="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  すぐに精算を始める
+                </Link>
+              </div>
+
+              {/* ログインして管理 */}
+              <div className="bg-white p-8 rounded-lg shadow-md border-2 border-green-200">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <LogIn className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    ログインして管理
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    データを保存して継続的に管理
+                  </p>
+                </div>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-700">データを永続化</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-700">過去の精算履歴を確認</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-700">設定をカスタマイズ</span>
+                  </div>
+                </div>
+
+                <Link
+                  href="/auth/signin"
+                  className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <LogIn className="w-5 h-5 mr-2" />
+                  ログインして始める
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* 利用シーン */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+              利用シーン
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <div className="text-center mb-4">
+                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">🎉</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">急な飲み会</h3>
+                </div>
+                <p className="text-gray-600 text-sm text-center">
+                  急に決まった飲み会の精算を素早く実行
+                </p>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <div className="text-center mb-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">👥</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">定期的な飲み会</h3>
+                </div>
+                <p className="text-gray-600 text-sm text-center">
+                  定期的な飲み会の精算を効率的に管理
+                </p>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <div className="text-center mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">📊</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">精算履歴</h3>
+                </div>
+                <p className="text-gray-600 text-sm text-center">
+                  過去の精算履歴を確認して分析
+                </p>
+              </div>
             </div>
           </section>
         </main>

@@ -12,7 +12,7 @@ services:
       - next_cache:/app/.next
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://kaisei_user:kaisei_password@db-dev:5432/kaisei_dev
+      - DATABASE_URL=postgresql://postgres:kaisei_password@db-dev:5432/kaisei_dev
     depends_on:
       - db-dev
     command: npm run dev
@@ -22,13 +22,13 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_DB: kaisei_dev
-      POSTGRES_USER: kaisei_user
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: kaisei_password
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
   postgres_data:
