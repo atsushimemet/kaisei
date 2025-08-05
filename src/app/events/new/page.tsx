@@ -443,9 +443,9 @@ export default function NewEventPage() {
     <>
       <ClientLogger componentName="NewEventPage" />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">新しい飲み会を作成</h1>
-          <div className="flex items-center space-x-4">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">新しい飲み会を作成</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
               💾 データは自動保存されています
             </div>
