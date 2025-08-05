@@ -525,23 +525,23 @@ KAISEI - 飲み会精算支援アプリ
       <div className="flex flex-wrap gap-4 justify-center">
         <button
           onClick={copyAllResults}
-          className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center space-x-2 w-48 h-12 px-6 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <Copy className="w-5 h-5" />
+          <Copy className="w-4 h-4" />
           <span>結果をコピー</span>
         </button>
         <button
           onClick={downloadResult}
-          className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          className="flex items-center justify-center space-x-2 w-48 h-12 px-6 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
         >
-          <Download className="w-5 h-5" />
+          <Download className="w-4 h-4" />
           <span>ファイルをダウンロード</span>
         </button>
         <button
           onClick={shareToLine}
-          className="flex items-center space-x-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          className="flex items-center justify-center space-x-2 w-48 h-12 px-6 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
         >
-          <MessageCircle className="w-5 h-5 text-white" />
+          <MessageCircle className="w-4 h-4 text-white" />
           <span>LINEで共有</span>
         </button>
       </div>
