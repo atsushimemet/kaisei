@@ -349,3 +349,79 @@ export function calculateFullSettlement(event: Event, config?: SettlementRules) 
     transfers
   }
 }
+
+/**
+ * クイック精算の結果をログイン済み版と同じ形式に変換
+ */
+export function convertQuickSettlementToDetailedFormat(
+  participants: Array<{
+    id: string
+    nickname: string
+    gender: 'male' | 'female' | 'unspecified'
+    role: 'senior' | 'junior' | 'flat'
+    stayRange: {
+      firstParty: number
+      secondParty: number
+      thirdParty: number
+    }
+  }>,
+  venues: Array<{
+    id: string
+    venueOrder: number
+    name: string
+    totalAmount: number | string
+    paidBy: string
+  }>,
+  rules: SettlementRules
+) {
+  console.log('🔄 [convertQuickSettlementToDetailedFormat] クイック精算結果の変換開始')
+
+  // Event形式に変換（型エラーを避けるため、必要なフィールドを追加）
+  const eventData: Event = {
+    id: 0,
+    title: 'クイック精算',
+    eventDate: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    participants: participants.map((p, index) => ({
+      ...p,
+      id: parseInt(p.id) || (index + 1), // IDが数値変換できない場合はインデックス+1を使用
+      eventId: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      settlements: []
+    })),
+    venues: venues.map((v, index) => ({
+      ...v,
+      id: parseInt(v.id) || (index + 1), // IDが数値変換できない場合はインデックス+1を使用
+      eventId: 0,
+      totalAmount: typeof v.totalAmount === 'string' ? parseInt(v.totalAmount) || 0 : v.totalAmount,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })),
+    settlements: []
+  }
+
+  // 詳細な精算計算を実行
+  const result = calculateFullSettlement(eventData, rules)
+
+  console.log('✅ [convertQuickSettlementToDetailedFormat] 変換完了')
+  
+  return {
+    event: {
+      id: eventData.id,
+      title: eventData.title,
+      eventDate: eventData.eventDate.toISOString().split('T')[0],
+      venues: eventData.venues.map(v => ({
+        id: v.id,
+        venueOrder: v.venueOrder,
+        name: v.name,
+        totalAmount: v.totalAmount,
+        paidBy: v.paidBy
+      }))
+    },
+    settlements: result.settlements,
+    paymentSummaries: result.paymentSummaries,
+    transfers: result.transfers
+  }
+}

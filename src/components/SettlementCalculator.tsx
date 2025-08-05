@@ -1,9 +1,10 @@
 'use client'
 
-import { calculateQuickSettlement } from '@/lib/settlement'
+import { convertQuickSettlementToDetailedFormat } from '@/lib/settlement'
 import { DEFAULT_SETTLEMENT_RULES, SettlementRules } from '@/types'
-import { AlertCircle, Copy, Download, MessageCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import SettlementResult from './SettlementResult'
 
 interface Participant {
   id: string
@@ -73,6 +74,7 @@ export default function SettlementCalculator({
   const [calculationResult, setCalculationResult] = useState<any>(null)
   const [showPopup, setShowPopup] = useState(false)
   const [popupMessage, setPopupMessage] = useState('')
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null)
 
   useEffect(() => {
     // ローカルストレージから設定を読み込み
@@ -123,117 +125,31 @@ export default function SettlementCalculator({
       return
     }
 
-    // 共通の精算計算関数を使用
-    const result = calculateQuickSettlement(event.participants, event.venues, rules)
+    // ログイン済み版と同じ詳細な形式で計算
+    const result = convertQuickSettlementToDetailedFormat(event.participants, event.venues, rules)
     
-    const fullResult = {
-      ...result,
-      event,
-      rules
-    }
-    
-    setCalculationResult(fullResult)
+    setCalculationResult(result)
     
     // ログイン済みの場合は保存コールバックを呼び出し
     if (isLoggedIn && onSave) {
-      onSave(fullResult)
+      onSave(result)
     }
   }
 
-  const copyResult = () => {
-    if (!calculationResult) return
-
-    const resultText = `
-🍺 ${calculationResult.event.title} 精算結果
-
-📅 開催日: ${calculationResult.event.eventDate}
-💰 総額: ¥${calculationResult.totalAmount.toLocaleString()}
-
-👥 参加者別精算額:
-${calculationResult.participants.map((p: any) => 
-  `• ${p.nickname}: ¥${p.amount.toLocaleString()}`
-).join('\n')}
-
-📊 計算詳細:
-${calculationResult.participants.map((p: any) => 
-  `• ${p.nickname}: 係数${p.multiplier.toFixed(2)}倍`
-).join('\n')}
-
----
-KAISEI - 飲み会精算支援アプリ
-    `.trim()
-
-    navigator.clipboard.writeText(resultText).then(() => {
-      alert('結果をクリップボードにコピーしました')
+  const handleCopy = (message: string, participantName?: string) => {
+    navigator.clipboard.writeText(message).then(() => {
+      if (participantName) {
+        setCopiedMessage(`${participantName}さんの精算メッセージをコピーしました`)
+      } else {
+        setCopiedMessage('結果をコピーしました')
+      }
+      setTimeout(() => setCopiedMessage(null), 3000)
     }).catch(() => {
-      alert('コピーに失敗しました')
+      setCopiedMessage('コピーに失敗しました')
+      setTimeout(() => setCopiedMessage(null), 3000)
     })
   }
 
-  const downloadResult = () => {
-    if (!calculationResult) return
-
-    const resultText = `
-🍺 ${calculationResult.event.title} 精算結果
-
-📅 開催日: ${calculationResult.event.eventDate}
-💰 総額: ¥${calculationResult.totalAmount.toLocaleString()}
-
-👥 参加者別精算額:
-${calculationResult.participants.map((p: any) => 
-  `• ${p.nickname}: ¥${p.amount.toLocaleString()}`
-).join('\n')}
-
-📊 計算詳細:
-${calculationResult.participants.map((p: any) => 
-  `• ${p.nickname}: 係数${p.multiplier.toFixed(2)}倍`
-).join('\n')}
-
----
-KAISEI - 飲み会精算支援アプリ
-    `.trim()
-
-    const blob = new Blob([resultText], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${calculationResult.event.title}_精算結果.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  const shareToLine = () => {
-    if (!calculationResult) return
-
-    const resultText = `
-🍺 ${calculationResult.event.title} 精算結果
-
-📅 開催日: ${calculationResult.event.eventDate}
-💰 総額: ¥${calculationResult.totalAmount.toLocaleString()}
-
-👥 参加者別精算額:
-${calculationResult.participants.map((p: any) => 
-  `• ${p.nickname}: ¥${p.amount.toLocaleString()}`
-).join('\n')}
-
-📊 計算詳細:
-${calculationResult.participants.map((p: any) => 
-  `• ${p.nickname}: 係数${p.multiplier.toFixed(2)}倍`
-).join('\n')}
-
----
-KAISEI - 飲み会精算支援アプリ
-    `.trim()
-
-    // LINEで共有するためのURLエンコード
-    const encodedText = encodeURIComponent(resultText)
-    const lineShareUrl = `https://line.me/R/msg/text/?${encodedText}`
-    
-    // LINEで共有を開く
-    window.open(lineShareUrl, '_blank')
-  }
 
   const maxPartyCount = calculateMaxPartyCount()
 
@@ -370,72 +286,30 @@ KAISEI - 飲み会精算支援アプリ
       {/* 精算結果 */}
       {calculationResult && (
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">精算結果</h2>
-          
-          <div className="bg-blue-50 p-4 rounded-lg mb-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">
-              🍺 {calculationResult.event.title}
-            </h3>
-            <p className="text-blue-800">
-              📅 開催日: {calculationResult.event.eventDate}
-            </p>
-            <p className="text-blue-800 font-semibold">
-              💰 総額: ¥{calculationResult.totalAmount.toLocaleString()}
-            </p>
-          </div>
-
-          <div className="space-y-4 mb-8">
-            <h4 className="text-lg font-medium text-gray-900">参加者別精算額</h4>
-            {calculationResult.participants.map((participant: any) => (
-              <div key={participant.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h5 className="font-medium text-gray-900">{participant.nickname}</h5>
-                    <p className="text-sm text-gray-600">
-                      係数: {participant.multiplier.toFixed(2)}倍
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold text-green-600">
-                      ¥{participant.amount.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-4 justify-center">
-            <button
-              onClick={copyResult}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Copy className="w-5 h-5" />
-              <span>結果をコピー</span>
-            </button>
-            <button
-              onClick={downloadResult}
-              className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Download className="w-5 h-5" />
-              <span>ファイルをダウンロード</span>
-            </button>
-            <button
-              onClick={shareToLine}
-              className="flex items-center space-x-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-            >
-              <MessageCircle className="w-5 h-5 text-white" />
-              <span>LINEで共有</span>
-            </button>
-          </div>
-
-          {isLoggedIn && (
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">精算結果</h2>
+            {isLoggedIn && (
+              <div className="text-sm text-gray-600">
                 💾 この精算結果は自動的に保存されました
-              </p>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+          
+          <SettlementResult
+            event={calculationResult.event}
+            paymentSummaries={calculationResult.paymentSummaries}
+            settlements={calculationResult.settlements}
+            transfers={calculationResult.transfers}
+            onCopy={handleCopy}
+            showDetailedBreakdown={true}
+          />
+        </div>
+      )}
+
+      {/* コピー成功メッセージ */}
+      {copiedMessage && (
+        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {copiedMessage}
         </div>
       )}
     </div>
