@@ -1,3 +1,4 @@
+import ClientLogger from '@/components/ClientLogger'
 import Header from '@/components/Header'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={inter.className}>
+        <ClientLogger componentName="RootLayout" />
         <div className="min-h-screen bg-gray-50">
           <Header />
           {children}
