@@ -135,6 +135,8 @@ export function calculatePaymentSummary(event: Event, settlements: SettlementCal
   const { participants, venues } = event
 
   console.log('💰 [calculatePaymentSummary] 支払いサマリー計算開始')
+  console.log('💰 [calculatePaymentSummary] settlements:', settlements.map(s => ({ participantId: s.participantId, amount: s.amount })))
+  console.log('💰 [calculatePaymentSummary] participants:', participants.map(p => ({ id: p.id, nickname: p.nickname })))
 
   return participants.map(participant => {
     // 実際に支払った金額を計算
@@ -149,6 +151,8 @@ export function calculatePaymentSummary(event: Event, settlements: SettlementCal
     const settlement = settlements.find(s => s.participantId === participant.id)
     const totalOwed = settlement?.amount || 0
     
+    console.log(`💰 [calculatePaymentSummary] ${participant.nickname}さん(ID:${participant.id})の精算検索:`)
+    console.log(`  - 検索したsettlement:`, settlement)
     console.log(`  - 負担義務額: ¥${totalOwed}`)
 
     // 差額を計算（正の値：お金をもらう、負の値：支払う）

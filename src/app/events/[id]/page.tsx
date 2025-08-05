@@ -2,7 +2,7 @@
 
 import ClientLogger from '@/components/ClientLogger'
 import { Event, Participant, PaymentSummary, SettlementCalculation, SettlementTransfer, Venue } from '@/types'
-import { ArrowRight, Calculator, Copy, Edit, MessageSquare, Plus, Save, Trash2, X } from 'lucide-react'
+import { ArrowRight, Calculator, ChevronDown, ChevronRight, Copy, Edit, MessageSquare, Plus, Save, Send, Trash2, X } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -15,6 +15,12 @@ export default function EventDetailPage() {
   const [transfers, setTransfers] = useState<SettlementTransfer[]>([])
   const [loading, setLoading] = useState(true)
   const [calculating, setCalculating] = useState(false)
+  
+  // アコーディオン状態管理
+  const [expandedAccordions, setExpandedAccordions] = useState<{[key: string]: boolean}>({})
+  
+  // コピー成功フィードバック
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null)
   
   // 編集状態管理
   const [editingParticipant, setEditingParticipant] = useState<number | null>(null)
@@ -111,28 +117,55 @@ export default function EventDetailPage() {
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
+  const copyToClipboard = (text: string, participantName?: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedMessage(participantName ? `${participantName}さんの精算メッセージをコピーしました` : 'コピーしました')
+      setTimeout(() => setCopiedMessage(null), 3000)
+    }).catch((err) => {
+      console.error('コピーに失敗しました:', err)
+    })
   }
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString()
   }
 
-  const generateSettlementMessage = (summary: PaymentSummary, transfers: SettlementTransfer[]) => {
-    let message = `${summary.nickname}さんの精算結果\n\n`
+  const toggleAccordion = (key: string) => {
+    setExpandedAccordions(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
+
+  const generateSettlementMessage = (summary: PaymentSummary, participantTransfers: SettlementTransfer[]) => {
+    let message = `【精算のお願い】\n${summary.nickname}さん\n\n`
+    message += `ありがとうございました！\n`
+    message += `${event?.title || '飲み会'} の精算をお願いします。\n\n`
+    
+    message += `■ 精算内容\n`
     message += `支払い総額: ¥${formatCurrency(summary.totalPaid)}\n`
     message += `負担総額: ¥${formatCurrency(summary.totalOwed)}\n`
-    message += `差額: ¥${formatCurrency(summary.balance)}\n\n`
-
-    if (transfers.length > 0) {
-      message += '精算方法:\n'
-      transfers.forEach((transfer, index) => {
-        message += `${index + 1}. ${transfer.from} → ${transfer.to}: ¥${formatCurrency(transfer.amount)}\n`
-      })
+    message += `差額: ¥${formatCurrency(summary.balance)}`
+    
+    if (summary.balance > 0) {
+      message += `（受け取り）\n\n`
+    } else if (summary.balance < 0) {
+      message += `（支払い）\n\n`
     } else {
-      message += '精算は不要です。'
+      message += `（収支一致）\n\n`
     }
+
+    if (participantTransfers.length > 0) {
+      message += `■ 精算方法\n`
+      participantTransfers.forEach((transfer) => {
+        message += `${transfer.from} → ${transfer.to}: ¥${formatCurrency(transfer.amount)}\n`
+      })
+      message += `\n`
+    } else if (summary.balance === 0) {
+      message += `■ 精算方法\n精算は不要です（収支が一致しています）\n\n`
+    }
+
+    message += `よろしくお願いします🙏`
 
     return message
   }
@@ -761,7 +794,7 @@ export default function EventDetailPage() {
                           <div className={`px-2 py-1 rounded text-xs font-medium ${isDefault ? 'bg-gray-200 text-gray-700' : 'bg-green-200 text-green-800'}`}>
                             {isDefault ? 'デフォルト設定' : 'カスタム設定'}を使用
                           </div>
-                          <div className="grid md:grid-cols-2 gap-3">
+                          <div className="grid md:grid-cols-3 gap-3">
                             <div>
                               <span className="font-medium">性別調整:</span>
                               <div className="ml-2">
@@ -778,6 +811,13 @@ export default function EventDetailPage() {
                                 フラット {config.roleMultiplier?.flat || 1.0}倍
                               </div>
                             </div>
+                            <div>
+                              <span className="font-medium">滞在時間調整:</span>
+                              <div className="ml-2 text-xs">
+                                各参加者の滞在時間の割合（0.0〜1.0）に応じて支払額を自動調整。<br/>
+                                例: 3次会を70%参加の場合、その会の支払いは70%になります。
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )
@@ -788,7 +828,8 @@ export default function EventDetailPage() {
                             デフォルト設定を使用
                           </div>
                           <div className="text-xs">
-                            性別・役割による調整なし（全員1.0倍）
+                            性別・役割による調整なし（全員1.0倍）<br/>
+                            滞在時間による調整は各参加者の参加率に応じて自動適用されます
                           </div>
                         </div>
                       )
@@ -801,36 +842,182 @@ export default function EventDetailPage() {
               <div className="space-y-6">
                 {paymentSummaries.map((summary) => (
                   <div key={summary.nickname} className="bg-white border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex-shrink-0">
                         {summary.nickname}さんの精算結果
                       </h3>
                       <button
-                        onClick={() => copyToClipboard(generateSettlementMessage(summary, transfers.filter(t => t.from === summary.nickname || t.to === summary.nickname)))}
-                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => {
+                          const participantTransfers = transfers.filter(t => t.from === summary.nickname || t.to === summary.nickname)
+                          const message = generateSettlementMessage(summary, participantTransfers)
+                          copyToClipboard(message, summary.nickname)
+                        }}
+                        className="px-3 py-2 sm:px-4 sm:py-2.5 bg-green-600 text-white text-xs sm:text-sm rounded-md hover:bg-green-700 transition-colors flex items-center space-x-1.5 flex-shrink-0"
                       >
-                        <Copy className="w-4 h-4" />
+                        <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="whitespace-nowrap"> 精算をお願い</span>
                       </button>
                     </div>
                     
                     <div className="grid md:grid-cols-3 gap-4 mb-4">
+                      {/* 支払い総額アコーディオン */}
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
-                          ¥{formatCurrency(summary.totalPaid)}
-                        </div>
-                        <div className="text-sm text-gray-600">支払い総額</div>
+                        <button
+                          onClick={() => toggleAccordion(`paid-${summary.nickname}`)}
+                          className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                        >
+                          <div>
+                            <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                              ¥{formatCurrency(summary.totalPaid)}
+                            </div>
+                            <div className="text-xs sm:text-sm text-gray-600 flex items-center justify-center">
+                              支払い総額
+                              {expandedAccordions[`paid-${summary.nickname}`] ? (
+                                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                              ) : (
+                                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        {expandedAccordions[`paid-${summary.nickname}`] && (
+                          <div className="mt-2 p-3 bg-blue-50 rounded-lg text-left">
+                            <h5 className="font-medium text-blue-900 mb-2">支払い詳細</h5>
+                            <div className="space-y-1 text-sm text-blue-800">
+                              {(() => {
+                                const paidVenues = event.venues.filter(venue => venue.paidBy === summary.nickname)
+                                if (paidVenues.length === 0) {
+                                  return <p>支払ったお店はありません</p>
+                                }
+                                return paidVenues
+                                  .sort((a, b) => a.venueOrder - b.venueOrder)
+                                  .map((venue) => (
+                                    <div key={venue.id} className="flex justify-between">
+                                      <span>{venue.venueOrder}次会: {venue.name}</span>
+                                      <span>¥{formatCurrency(venue.totalAmount)}</span>
+                                    </div>
+                                  ))
+                              })()}
+                              <div className="border-t pt-1 mt-2 font-medium flex justify-between">
+                                <span>合計</span>
+                                <span>¥{formatCurrency(summary.totalPaid)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* 負担総額アコーディオン */}
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          ¥{formatCurrency(summary.totalOwed)}
-                        </div>
-                        <div className="text-sm text-gray-600">負担総額</div>
+                        <button
+                          onClick={() => toggleAccordion(`owed-${summary.nickname}`)}
+                          className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                        >
+                          <div>
+                            <div className="text-xl sm:text-2xl font-bold text-green-600">
+                              ¥{formatCurrency(summary.totalOwed)}
+                            </div>
+                            <div className="text-xs sm:text-sm text-gray-600 flex items-center justify-center">
+                              負担総額
+                              {expandedAccordions[`owed-${summary.nickname}`] ? (
+                                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                              ) : (
+                                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        {expandedAccordions[`owed-${summary.nickname}`] && (
+                          <div className="mt-2 p-3 bg-green-50 rounded-lg text-left">
+                            <h5 className="font-medium text-green-900 mb-2">負担詳細</h5>
+                            <div className="space-y-2 text-sm text-green-800">
+                              {(() => {
+                                const settlement = settlements.find(s => s.participantId === summary.participantId)
+                                if (!settlement) {
+                                  return <p>計算データがありません</p>
+                                }
+                                return settlement.breakdown.map((item) => {
+                                  const venue = event.venues.find(v => v.id === item.venueId)
+                                  const venueOrder = venue?.venueOrder || 1
+                                  return (
+                                    <div key={item.venueId} className="space-y-1">
+                                      <div className="font-medium">{venueOrder}次会: {item.venueName}</div>
+                                    <div className="ml-2 text-xs space-y-1">
+                                      <div className="flex justify-between">
+                                        <span>基本金額:</span>
+                                        <span>¥{formatCurrency(item.baseAmount)}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>参加率: {item.factors.stayRange}</span>
+                                        <span>性別: {item.factors.gender}倍</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>役割: {item.factors.role}倍</span>
+                                        <span className="font-medium">¥{formatCurrency(item.adjustedAmount)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  )
+                                })
+                              })()}
+                              <div className="border-t pt-1 mt-2 font-medium flex justify-between">
+                                <span>合計</span>
+                                <span>¥{formatCurrency(summary.totalOwed)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* 差額アコーディオン */}
                       <div className="text-center">
-                        <div className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          ¥{formatCurrency(summary.balance)}
-                        </div>
-                        <div className="text-sm text-gray-600">差額</div>
+                        <button
+                          onClick={() => toggleAccordion(`balance-${summary.nickname}`)}
+                          className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                        >
+                          <div>
+                            <div className={`text-xl sm:text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ¥{formatCurrency(summary.balance)}
+                            </div>
+                            <div className="text-xs sm:text-sm text-gray-600 flex items-center justify-center">
+                              差額
+                              {expandedAccordions[`balance-${summary.nickname}`] ? (
+                                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                              ) : (
+                                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        {expandedAccordions[`balance-${summary.nickname}`] && (
+                          <div className="mt-2 p-3 bg-gray-50 rounded-lg text-left">
+                            <h5 className="font-medium text-gray-900 mb-2">差額計算</h5>
+                            <div className="space-y-1 text-sm text-gray-700">
+                              <div className="flex justify-between">
+                                <span>支払い総額:</span>
+                                <span>¥{formatCurrency(summary.totalPaid)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>負担総額:</span>
+                                <span>¥{formatCurrency(summary.totalOwed)}</span>
+                              </div>
+                              <div className="border-t pt-1 mt-1 font-medium flex justify-between">
+                                <span>差額:</span>
+                                <span className={summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                  ¥{formatCurrency(summary.balance)}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-2">
+                                {summary.balance > 0 
+                                  ? '他の参加者から受け取る金額' 
+                                  : summary.balance < 0 
+                                    ? '他の参加者に支払う金額'
+                                    : '精算不要（収支が一致）'
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -907,6 +1094,13 @@ export default function EventDetailPage() {
             </div>
           )}
         </div>
+
+        {/* コピー成功メッセージ */}
+        {copiedMessage && (
+          <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+            {copiedMessage}
+          </div>
+        )}
       </div>
     </>
   )
