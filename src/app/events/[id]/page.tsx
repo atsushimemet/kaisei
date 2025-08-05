@@ -139,7 +139,7 @@ export default function EventDetailPage() {
 
   const generateSettlementMessage = (summary: PaymentSummary, participantTransfers: SettlementTransfer[]) => {
     let message = `【精算のお願い】\n${summary.nickname}さん\n\n`
-    message += `お疲れさまでした！\n`
+    message += `ありがとうございました！\n`
     message += `${event?.title || '飲み会'} の精算をお願いします。\n\n`
     
     message += `■ 精算内容\n`
@@ -842,8 +842,8 @@ export default function EventDetailPage() {
               <div className="space-y-6">
                 {paymentSummaries.map((summary) => (
                   <div key={summary.nickname} className="bg-white border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex-shrink-0">
                         {summary.nickname}さんの精算結果
                       </h3>
                       <button
@@ -852,10 +852,10 @@ export default function EventDetailPage() {
                           const message = generateSettlementMessage(summary, participantTransfers)
                           copyToClipboard(message, summary.nickname)
                         }}
-                        className="px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors flex items-center space-x-1"
+                        className="px-3 py-2 sm:px-4 sm:py-2.5 bg-green-600 text-white text-xs sm:text-sm rounded-md hover:bg-green-700 transition-colors flex items-center space-x-1.5 flex-shrink-0"
                       >
-                        <Send className="w-4 h-4" />
-                        <span>精算をお願い</span>
+                        <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="whitespace-nowrap">精算をお願い</span>
                       </button>
                     </div>
                     
@@ -867,15 +867,15 @@ export default function EventDetailPage() {
                           className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
                         >
                           <div>
-                            <div className="text-2xl font-bold text-blue-600">
+                            <div className="text-xl sm:text-2xl font-bold text-blue-600">
                               ¥{formatCurrency(summary.totalPaid)}
                             </div>
-                            <div className="text-sm text-gray-600 flex items-center justify-center">
+                            <div className="text-xs sm:text-sm text-gray-600 flex items-center justify-center">
                               支払い総額
                               {expandedAccordions[`paid-${summary.nickname}`] ? (
-                                <ChevronDown className="w-4 h-4 ml-1" />
+                                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 ml-1" />
+                                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                               )}
                             </div>
                           </div>
@@ -914,15 +914,15 @@ export default function EventDetailPage() {
                           className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
                         >
                           <div>
-                            <div className="text-2xl font-bold text-green-600">
+                            <div className="text-xl sm:text-2xl font-bold text-green-600">
                               ¥{formatCurrency(summary.totalOwed)}
                             </div>
-                            <div className="text-sm text-gray-600 flex items-center justify-center">
+                            <div className="text-xs sm:text-sm text-gray-600 flex items-center justify-center">
                               負担総額
                               {expandedAccordions[`owed-${summary.nickname}`] ? (
-                                <ChevronDown className="w-4 h-4 ml-1" />
+                                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 ml-1" />
+                                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                               )}
                             </div>
                           </div>
@@ -976,15 +976,15 @@ export default function EventDetailPage() {
                           className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
                         >
                           <div>
-                            <div className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            <div className={`text-xl sm:text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               ¥{formatCurrency(summary.balance)}
                             </div>
-                            <div className="text-sm text-gray-600 flex items-center justify-center">
+                            <div className="text-xs sm:text-sm text-gray-600 flex items-center justify-center">
                               差額
                               {expandedAccordions[`balance-${summary.nickname}`] ? (
-                                <ChevronDown className="w-4 h-4 ml-1" />
+                                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 ml-1" />
+                                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                               )}
                             </div>
                           </div>
