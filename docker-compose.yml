@@ -9,6 +9,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      - next_cache:/app/.next
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://kaisei_user:kaisei_password@db-dev:5432/kaisei_dev
@@ -30,4 +31,5 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  next_cache: 

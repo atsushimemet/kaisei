@@ -1,5 +1,6 @@
 import ClientLogger from '@/components/ClientLogger'
 import Header from '@/components/Header'
+import StyleLoader from '@/components/StyleLoader'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -18,12 +19,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
+      <head>
+        <link rel="preload" href="/globals.css" as="style" />
+      </head>
       <body className={inter.className}>
         <ClientLogger componentName="RootLayout" />
-        <div className="min-h-screen bg-gray-50">
-          <Header />
-          {children}
-        </div>
+        <StyleLoader>
+          <div className="min-h-screen bg-gray-50">
+            <Header />
+            {children}
+          </div>
+        </StyleLoader>
       </body>
     </html>
   )
