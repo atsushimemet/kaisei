@@ -1,7 +1,7 @@
 'use client'
 
 import { DEFAULT_SETTLEMENT_RULES, SettlementRules } from '@/types'
-import { AlertCircle, ArrowLeft, Copy, Download, HelpCircle, Plus, Save } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Copy, Download, HelpCircle, MessageCircle, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -331,15 +331,32 @@ KAISEI - 飲み会精算支援アプリ
   const saveToLocalStorage = () => {
     if (!calculationResult) return
 
-    const savedEvents = JSON.parse(localStorage.getItem('quickEvents') || '[]')
-    const newEvent = {
-      ...calculationResult,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    }
-    savedEvents.push(newEvent)
-    localStorage.setItem('quickEvents', JSON.stringify(savedEvents))
-    alert('精算結果をローカルに保存しました！')
+    const resultText = `
+🍺 ${calculationResult.event.title} 精算結果
+
+📅 開催日: ${calculationResult.event.eventDate}
+💰 総額: ¥${calculationResult.totalAmount.toLocaleString()}
+
+👥 参加者別精算額:
+${calculationResult.participants.map((p: any) => 
+  `• ${p.nickname}: ¥${p.amount.toLocaleString()}`
+).join('\n')}
+
+📊 計算詳細:
+${calculationResult.participants.map((p: any) => 
+  `• ${p.nickname}: 係数${p.multiplier.toFixed(2)}倍`
+).join('\n')}
+
+---
+KAISEI - 飲み会精算支援アプリ
+    `.trim()
+
+    // LINEで共有するためのURLエンコード
+    const encodedText = encodeURIComponent(resultText)
+    const lineShareUrl = `https://line.me/R/msg/text/?${encodedText}`
+    
+    // LINEで共有を開く
+    window.open(lineShareUrl, '_blank')
   }
 
   const maxPartyCount = calculateMaxPartyCount()
@@ -757,10 +774,10 @@ KAISEI - 飲み会精算支援アプリ
             </button>
             <button
               onClick={saveToLocalStorage}
-              className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="flex items-center space-x-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
-              <Save className="w-5 h-5" />
-              <span>ローカルに保存</span>
+              <MessageCircle className="w-5 h-5 text-white" />
+              <span>LINEで共有</span>
             </button>
           </div>
 
