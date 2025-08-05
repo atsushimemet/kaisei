@@ -73,15 +73,66 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await prisma.venue.delete({
-      where: {
-        id: parseInt(params.id),
-      },
+    console.log('🗑️ [DELETE /venues] お店削除開始')
+    const venueId = parseInt(params.id)
+    if (isNaN(venueId)) {
+      console.log('❌ [DELETE /venues] 無効なvenueId:', params.id)
+      return NextResponse.json(
+        { error: '無効なお店IDです' },
+        { status: 400 }
+      )
+    }
+
+    console.log('🔍 [DELETE /venues] 削除対象venueId:', venueId)
+
+    // 削除するvenueの情報を取得
+    const venueToDelete = await prisma.venue.findUnique({
+      where: { id: venueId },
+      select: { eventId: true, venueOrder: true }
     })
 
+    if (!venueToDelete) {
+      console.log('❌ [DELETE /venues] venueが見つかりません:', venueId)
+      return NextResponse.json(
+        { error: 'お店が見つかりません' },
+        { status: 404 }
+      )
+    }
+
+    console.log('📊 [DELETE /venues] 削除対象venue:', venueToDelete)
+
+    // venueを削除
+    await prisma.venue.delete({
+      where: { id: venueId },
+    })
+
+    console.log('✅ [DELETE /venues] venue削除完了')
+
+    // 同じイベントの残りのvenueのvenueOrderを再整理
+    const remainingVenues = await prisma.venue.findMany({
+      where: { eventId: venueToDelete.eventId },
+      orderBy: { venueOrder: 'asc' },
+      select: { id: true, venueOrder: true }
+    })
+
+    console.log('📊 [DELETE /venues] 削除後の残りvenue:', remainingVenues)
+
+    // venueOrderを1から連番で再割り当て
+    for (let i = 0; i < remainingVenues.length; i++) {
+      const venue = remainingVenues[i]
+      if (venue.venueOrder !== i + 1) {
+        console.log('🔄 [DELETE /venues] venueOrder更新:', { id: venue.id, oldOrder: venue.venueOrder, newOrder: i + 1 })
+        await prisma.venue.update({
+          where: { id: venue.id },
+          data: { venueOrder: i + 1 }
+        })
+      }
+    }
+
+    console.log('✅ [DELETE /venues] venueOrder再整理完了')
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting venue:', error)
+    console.error('❌ [DELETE /venues] エラー:', error)
     return NextResponse.json(
       { error: 'Failed to delete venue' },
       { status: 500 }
