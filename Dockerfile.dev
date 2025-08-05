@@ -8,7 +8,10 @@ RUN apk add --no-cache openssl
 # パッケージファイルをコピー
 COPY package*.json ./
 
-# 依存関係をインストール
+# Prismaスキーマをコピー
+COPY prisma ./prisma
+
+# 依存関係をインストール（postinstallでprisma generateが実行される）
 RUN npm ci
 
 # ソースコードをコピー
