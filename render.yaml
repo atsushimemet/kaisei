@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: kaisei-app
+    env: docker
+    dockerfilePath: ./Dockerfile.prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXTAUTH_URL
+        sync: false  # Set manually in Render dashboard
+      - key: NEXTAUTH_SECRET
+        sync: false  # Set manually in Render dashboard
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: GOOGLE_CLIENT_ID
+        sync: false  # Set manually in Render dashboard
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false  # Set manually in Render dashboard
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false  # Set manually in Render dashboard
+
+databases:
+  - name: kaisei-db
+    plan: free
+    region: oregon

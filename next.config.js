@@ -2,13 +2,13 @@
 const nextConfig = {
   output: 'standalone',
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'kaisei-app.onrender.com'],
   },
-  // CSS optimization for development
+  // CSS optimization for production
   experimental: {
-    optimizeCss: false,
+    optimizeCss: true,
   },
-  // Improve CSS loading in development
+  // Improve CSS loading
   webpack: (config, { dev }) => {
     if (dev) {
       config.optimization.splitChunks = {
