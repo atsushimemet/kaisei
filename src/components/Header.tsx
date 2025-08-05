@@ -4,6 +4,13 @@ import { Home, Settings } from 'lucide-react'
 import Link from 'next/link'
 
 export default function Header() {
+  const handleSettingsClick = () => {
+    // 設定画面への移動であることを示すフラグを設定
+    localStorage.setItem('navigatingToSettings', 'true')
+    localStorage.setItem('fromNewEventPage', 'true')
+    console.log('🔗 [Header] 設定画面への移動フラグを設定しました')
+  }
+
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4 py-4">
@@ -18,6 +25,7 @@ export default function Header() {
           
           <Link 
             href="/settings" 
+            onClick={handleSettingsClick}
             className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
           >
             <Settings className="w-5 h-5" />

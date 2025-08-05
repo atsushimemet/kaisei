@@ -4,7 +4,10 @@ import ClientLogger from '@/components/ClientLogger'
 import { CreateEventData, CreateParticipantData, CreateVenueData } from '@/types'
 import { Edit, Plus, Save, Trash2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+// localStorageのキー
+const FORM_DATA_KEY = 'newEventFormData'
 
 export default function NewEventPage() {
   console.log('🚀 [NewEventPage] 新しい飲み会作成ページがマウントされました')
@@ -34,11 +37,186 @@ export default function NewEventPage() {
     paidBy: '',
   })
 
+  // 現在の入力データも保存・復元するためのキー
+  const CURRENT_PARTICIPANT_KEY = 'newEventCurrentParticipant'
+  const CURRENT_VENUE_KEY = 'newEventCurrentVenue'
+
   // 編集状態管理
   const [editingParticipantIndex, setEditingParticipantIndex] = useState<number | null>(null)
   const [editingVenueIndex, setEditingVenueIndex] = useState<number | null>(null)
   const [editParticipantData, setEditParticipantData] = useState<CreateParticipantData | null>(null)
   const [editVenueData, setEditVenueData] = useState<CreateVenueData | null>(null)
+
+  // ページマウント時にlocalStorageからデータを復元
+  useEffect(() => {
+    console.log('📥 [NewEventPage] localStorageからデータを復元中...')
+    
+    // 設定画面から戻ってきたかどうかをチェック
+    const fromSettings = localStorage.getItem('fromNewEventPage') === 'true'
+    if (fromSettings) {
+      console.log('🔄 [NewEventPage] 設定画面から戻ってきました')
+      // フラグは設定画面でクリアされるため、ここでは削除しない
+    }
+    
+    // フォームデータの復元
+    const savedData = localStorage.getItem(FORM_DATA_KEY)
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData)
+        console.log('✅ [NewEventPage] 保存されたデータを復元:', parsedData)
+        console.log('📊 [NewEventPage] 復元された参加者数:', parsedData.participants?.length || 0)
+        console.log('🏪 [NewEventPage] 復元されたお店数:', parsedData.venues?.length || 0)
+        setFormData(parsedData)
+      } catch (error) {
+        console.error('❌ [NewEventPage] データ復元エラー:', error)
+        localStorage.removeItem(FORM_DATA_KEY)
+      }
+    } else {
+      console.log('ℹ️ [NewEventPage] 保存されたデータが見つかりません')
+    }
+
+    // 現在の参加者入力データの復元
+    const savedCurrentParticipant = localStorage.getItem(CURRENT_PARTICIPANT_KEY)
+    if (savedCurrentParticipant) {
+      try {
+        const parsedParticipant = JSON.parse(savedCurrentParticipant)
+        console.log('✅ [NewEventPage] 現在の参加者入力データを復元:', parsedParticipant)
+        setCurrentParticipant(parsedParticipant)
+      } catch (error) {
+        console.error('❌ [NewEventPage] 参加者入力データ復元エラー:', error)
+        localStorage.removeItem(CURRENT_PARTICIPANT_KEY)
+      }
+    }
+
+    // 現在のお店入力データの復元
+    const savedCurrentVenue = localStorage.getItem(CURRENT_VENUE_KEY)
+    if (savedCurrentVenue) {
+      try {
+        const parsedVenue = JSON.parse(savedCurrentVenue)
+        console.log('✅ [NewEventPage] 現在のお店入力データを復元:', parsedVenue)
+        setCurrentVenue(parsedVenue)
+      } catch (error) {
+        console.error('❌ [NewEventPage] お店入力データ復元エラー:', error)
+        localStorage.removeItem(CURRENT_VENUE_KEY)
+      }
+    }
+
+    // データ復元完了後にフラグを設定
+    setTimeout(() => {
+      setIsDataRestored(true)
+      console.log('✅ [NewEventPage] データ復元完了、保存機能を有効化')
+    }, 100)
+  }, [])
+
+  // データ復元フラグ
+  const [isDataRestored, setIsDataRestored] = useState(false)
+
+  // フォームデータが変更されるたびにlocalStorageに保存（データ復元後のみ）
+  useEffect(() => {
+    if (isDataRestored) {
+      console.log('💾 [NewEventPage] フォームデータをlocalStorageに保存中...')
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(formData))
+    }
+  }, [formData, isDataRestored])
+
+  // 現在の参加者入力データが変更されるたびにlocalStorageに保存（データ復元後のみ）
+  useEffect(() => {
+    if (isDataRestored) {
+      console.log('💾 [NewEventPage] 現在の参加者入力データをlocalStorageに保存中...')
+      localStorage.setItem(CURRENT_PARTICIPANT_KEY, JSON.stringify(currentParticipant))
+    }
+  }, [currentParticipant, isDataRestored])
+
+  // 現在のお店入力データが変更されるたびにlocalStorageに保存（データ復元後のみ）
+  useEffect(() => {
+    if (isDataRestored) {
+      console.log('💾 [NewEventPage] 現在のお店入力データをlocalStorageに保存中...')
+      localStorage.setItem(CURRENT_VENUE_KEY, JSON.stringify(currentVenue))
+    }
+  }, [currentVenue, isDataRestored])
+
+  // ページを離れる際のデータ管理
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // ブラウザを閉じる時のみデータをクリア
+      console.log('🧹 [NewEventPage] ブラウザを閉じるため、データをクリア')
+      localStorage.removeItem(FORM_DATA_KEY)
+      localStorage.removeItem(CURRENT_PARTICIPANT_KEY)
+      localStorage.removeItem(CURRENT_VENUE_KEY)
+    }
+
+    // ページが非表示になった時の処理
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // 設定画面への移動かどうかをチェック
+        const isNavigatingToSettings = localStorage.getItem('navigatingToSettings') === 'true'
+        const fromNewEventPage = localStorage.getItem('fromNewEventPage') === 'true'
+        
+        console.log('👁️ [NewEventPage] ページ非表示:', { isNavigatingToSettings, fromNewEventPage })
+        
+        if (isNavigatingToSettings || fromNewEventPage) {
+          console.log('💾 [NewEventPage] 設定画面への移動のため、データを保持')
+          // 設定画面への移動であることを示すフラグを設定
+          localStorage.setItem('fromNewEventPage', 'true')
+        } else {
+          console.log('🧹 [NewEventPage] その他の理由でページ非表示、データをクリア')
+          localStorage.removeItem(FORM_DATA_KEY)
+          localStorage.removeItem(CURRENT_PARTICIPANT_KEY)
+          localStorage.removeItem(CURRENT_VENUE_KEY)
+        }
+      } else if (document.visibilityState === 'visible') {
+        // ページが再表示された時
+        const fromNewEventPage = localStorage.getItem('fromNewEventPage') === 'true'
+        if (fromNewEventPage) {
+          console.log('🔄 [NewEventPage] 設定画面から戻ってきました')
+          // fromNewEventPageフラグは設定画面で管理するため、ここでは削除しない
+        }
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
+  // フォームデータをクリアする関数
+  const clearFormData = () => {
+    console.log('🧹 [NewEventPage] フォームデータをクリア')
+    localStorage.removeItem(FORM_DATA_KEY)
+    localStorage.removeItem(CURRENT_PARTICIPANT_KEY)
+    localStorage.removeItem(CURRENT_VENUE_KEY)
+    setFormData({
+      title: '',
+      eventDate: '',
+      participants: [],
+      venues: [],
+    })
+    setCurrentParticipant({
+      nickname: '',
+      gender: 'unspecified',
+      role: 'flat',
+      stayRange: {
+        firstParty: 1.0,
+        secondParty: 0.0,
+        thirdParty: 0.0,
+      },
+    })
+    setCurrentVenue({
+      venueOrder: 1,
+      name: '',
+      totalAmount: 0,
+      paidBy: '',
+    })
+    // データ復元フラグをリセット
+    setIsDataRestored(false)
+    setTimeout(() => {
+      setIsDataRestored(true)
+    }, 100)
+  }
 
   const addParticipant = () => {
     console.log('👥 [addParticipant] 参加者追加開始')
@@ -243,6 +421,12 @@ export default function NewEventPage() {
         const data = await response.json()
         console.log('✅ [handleSubmit] 飲み会作成成功:', data)
         console.log('🔢 [handleSubmit] 作成されたvenueOrder一覧:', data.venues?.map((v: any, i: number) => ({ index: i, venueOrder: v.venueOrder, name: v.name })) || [])
+        
+        // 飲み会作成成功時にフォームデータをクリア
+        clearFormData()
+        // データ復元フラグをリセット
+        setIsDataRestored(false)
+        
         router.push(`/events/${data.id}`)
       } else {
         const errorData = await response.json().catch(() => ({}))
@@ -259,7 +443,17 @@ export default function NewEventPage() {
     <>
       <ClientLogger componentName="NewEventPage" />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">新しい飲み会を作成</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">新しい飲み会を作成</h1>
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              💾 データは自動保存されています
+            </div>
+            <div className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+              ⚙️ 設定画面で傾斜を調整できます
+            </div>
+          </div>
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* 基本情報 */}
@@ -696,7 +890,14 @@ export default function NewEventPage() {
           </div>
 
           {/* 送信ボタン */}
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <button
+              type="button"
+              onClick={clearFormData}
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+            >
+              データをクリア
+            </button>
             <button
               type="submit"
               className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
