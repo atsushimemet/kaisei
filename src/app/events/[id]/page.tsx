@@ -761,7 +761,7 @@ export default function EventDetailPage() {
                           <div className={`px-2 py-1 rounded text-xs font-medium ${isDefault ? 'bg-gray-200 text-gray-700' : 'bg-green-200 text-green-800'}`}>
                             {isDefault ? 'デフォルト設定' : 'カスタム設定'}を使用
                           </div>
-                          <div className="grid md:grid-cols-2 gap-3">
+                          <div className="grid md:grid-cols-3 gap-3">
                             <div>
                               <span className="font-medium">性別調整:</span>
                               <div className="ml-2">
@@ -778,6 +778,13 @@ export default function EventDetailPage() {
                                 フラット {config.roleMultiplier?.flat || 1.0}倍
                               </div>
                             </div>
+                            <div>
+                              <span className="font-medium">滞在時間調整:</span>
+                              <div className="ml-2 text-xs">
+                                各参加者の滞在時間の割合（0.0〜1.0）に応じて支払額を自動調整。<br/>
+                                例: 3次会を70%参加の場合、その会の支払いは70%になります。
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )
@@ -788,7 +795,8 @@ export default function EventDetailPage() {
                             デフォルト設定を使用
                           </div>
                           <div className="text-xs">
-                            性別・役割による調整なし（全員1.0倍）
+                            性別・役割による調整なし（全員1.0倍）<br/>
+                            滞在時間による調整は各参加者の参加率に応じて自動適用されます
                           </div>
                         </div>
                       )
