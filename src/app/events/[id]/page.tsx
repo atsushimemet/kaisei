@@ -39,12 +39,18 @@ export default function EventDetailPage() {
       let config = null
       try {
         const savedConfig = localStorage.getItem('settlementRules')
+        console.log('Raw savedConfig from localStorage:', savedConfig)
         if (savedConfig) {
           config = JSON.parse(savedConfig)
+          console.log('Parsed config:', config)
+        } else {
+          console.log('No config found in localStorage')
         }
       } catch (error) {
         console.error('Error loading settlement config:', error)
       }
+
+      console.log('Sending config to API:', config)
 
       // 設定を含めてAPIを呼び出し
       const response = await fetch(`/api/events/${params.id}/settlements`, {
@@ -57,9 +63,12 @@ export default function EventDetailPage() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('API response:', data)
         setSettlements(data.settlements)
         setPaymentSummaries(data.paymentSummaries)
         setTransfers(data.transfers)
+      } else {
+        console.error('API response error:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error calculating settlements:', error)
@@ -194,13 +203,15 @@ export default function EventDetailPage() {
             {/* 使用した設定の表示 */}
             <div className="bg-blue-50 p-4 rounded-lg">
               <h4 className="text-sm font-medium text-blue-900 mb-2">📋 使用した設定</h4>
-              <div className="text-xs text-blue-800 space-y-1">
+              <div className="text-xs text-blue-800 space-y-2">
                 {(() => {
                   let config = null
+                  let isDefault = true
                   try {
                     const savedConfig = localStorage.getItem('settlementRules')
                     if (savedConfig) {
                       config = JSON.parse(savedConfig)
+                      isDefault = false
                     }
                   } catch (error) {
                     console.error('Error loading config for display:', error)
@@ -208,17 +219,42 @@ export default function EventDetailPage() {
                   
                   if (config) {
                     return (
-                      <div className="grid md:grid-cols-2 gap-3">
-                        <div>
-                          <span className="font-medium">性別調整:</span> 男性{config.genderMultiplier.male}倍, 女性{config.genderMultiplier.female}倍, 未設定{config.genderMultiplier.unspecified}倍
+                      <div className="space-y-2">
+                        <div className={`px-2 py-1 rounded text-xs font-medium ${isDefault ? 'bg-gray-200 text-gray-700' : 'bg-green-200 text-green-800'}`}>
+                          {isDefault ? 'デフォルト設定' : 'カスタム設定'}を使用
                         </div>
-                        <div>
-                          <span className="font-medium">役割調整:</span> 先輩{config.roleMultiplier.senior}倍, 後輩{config.roleMultiplier.junior}倍, フラット{config.roleMultiplier.flat}倍
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div>
+                            <span className="font-medium">性別調整:</span>
+                            <div className="ml-2">
+                              男性 {config.genderMultiplier?.male || 1.0}倍<br/>
+                              女性 {config.genderMultiplier?.female || 1.0}倍<br/>
+                              未設定 {config.genderMultiplier?.unspecified || 1.0}倍
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium">役割調整:</span>
+                            <div className="ml-2">
+                              先輩 {config.roleMultiplier?.senior || 1.0}倍<br/>
+                              後輩 {config.roleMultiplier?.junior || 1.0}倍<br/>
+                              フラット {config.roleMultiplier?.flat || 1.0}倍
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )
                   } else {
-                    return <div>デフォルト設定を使用</div>
+                    return (
+                      <div className="space-y-2">
+                        <div className="px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-700">
+                          デフォルト設定を使用
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          性別: 男性1.2倍, 女性0.8倍, 未設定1.0倍<br/>
+                          役割: 先輩1.3倍, 後輩0.7倍, フラット1.0倍
+                        </div>
+                      </div>
+                    )
                   }
                 })()}
               </div>

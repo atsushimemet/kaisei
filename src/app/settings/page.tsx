@@ -1,64 +1,41 @@
 'use client'
 
+import { SettlementRules, DEFAULT_SETTLEMENT_RULES } from '@/types'
 import { Save } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-interface SettlementRules {
-  genderMultiplier: {
-    male: number
-    female: number
-    unspecified: number
-  }
-  roleMultiplier: {
-    senior: number
-    junior: number
-    flat: number
-  }
-  stayRangeMultiplier: {
-    first: number
-    second: number
-    third: number
-  }
-}
-
-const defaultRules: SettlementRules = {
-  genderMultiplier: {
-    male: 1.0,
-    female: 1.0,
-    unspecified: 1.0,
-  },
-  roleMultiplier: {
-    senior: 1.2,
-    junior: 0.8,
-    flat: 1.0,
-  },
-  stayRangeMultiplier: {
-    first: 1.0,
-    second: 1.0,
-    third: 1.0,
-  },
-}
-
 export default function SettingsPage() {
-  const [rules, setRules] = useState<SettlementRules>(defaultRules)
+  const [rules, setRules] = useState<SettlementRules>(DEFAULT_SETTLEMENT_RULES)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     // ローカルストレージから設定を読み込み
     const savedRules = localStorage.getItem('settlementRules')
+    console.log('Loading settings from localStorage:', savedRules)
     if (savedRules) {
-      setRules(JSON.parse(savedRules))
+      try {
+        const parsed = JSON.parse(savedRules)
+        console.log('Parsed settings:', parsed)
+        setRules(parsed)
+      } catch (error) {
+        console.error('Error parsing saved rules:', error)
+        setRules(DEFAULT_SETTLEMENT_RULES)
+      }
+    } else {
+      console.log('No saved settings found, using defaults')
     }
   }, [])
 
   const handleSave = () => {
-    localStorage.setItem('settlementRules', JSON.stringify(rules))
+    const configToSave = JSON.stringify(rules)
+    console.log('Saving settings to localStorage:', configToSave)
+    localStorage.setItem('settlementRules', configToSave)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   const handleReset = () => {
-    setRules(defaultRules)
+    setRules(DEFAULT_SETTLEMENT_RULES)
   }
 
   const updateGenderMultiplier = (gender: keyof SettlementRules['genderMultiplier'], value: number) => {

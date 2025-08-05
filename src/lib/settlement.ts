@@ -1,62 +1,37 @@
-import { Event, Participant, Venue, PaymentSummary, SettlementTransfer, SettlementCalculation } from '@/types'
-
-// デフォルト設定
-const DEFAULT_SETTLEMENT_CONFIG = {
-  genderMultiplier: {
-    male: 1.2,
-    female: 0.8,
-    unspecified: 1.0
-  },
-  roleMultiplier: {
-    senior: 1.3,
-    junior: 0.7,
-    flat: 1.0
-  }
-}
-
-// 設定型定義
-export interface SettlementConfig {
-  genderMultiplier: {
-    male: number
-    female: number
-    unspecified: number
-  }
-  roleMultiplier: {
-    senior: number
-    junior: number
-    flat: number
-  }
-  stayRangeMultiplier?: {
-    first: number
-    second: number
-    third: number
-  }
-}
+import { Event, Participant, Venue, PaymentSummary, SettlementTransfer, SettlementCalculation, SettlementRules, DEFAULT_SETTLEMENT_RULES } from '@/types'
 
 // ローカルストレージから設定を取得する関数
-export function getSettlementConfig(): SettlementConfig {
+export function getSettlementConfig(): SettlementRules {
   if (typeof window === 'undefined') {
-    return DEFAULT_SETTLEMENT_CONFIG
+    console.log('Server-side: Using default settlement rules')
+    return DEFAULT_SETTLEMENT_RULES
   }
   
   try {
     const savedConfig = localStorage.getItem('settlementRules')
     if (savedConfig) {
-      return JSON.parse(savedConfig)
+      const parsed = JSON.parse(savedConfig)
+      console.log('Loaded settlement config from localStorage:', parsed)
+      return parsed
+    } else {
+      console.log('No settlement config in localStorage, using defaults')
     }
   } catch (error) {
     console.error('Error loading settlement config:', error)
   }
   
-  return DEFAULT_SETTLEMENT_CONFIG
+  console.log('Using default settlement rules:', DEFAULT_SETTLEMENT_RULES)
+  return DEFAULT_SETTLEMENT_RULES
 }
 
 /**
  * 参加者の各会での支払い義務金額を計算
  */
-export function calculateSettlements(event: Event, config?: SettlementConfig): SettlementCalculation[] {
+export function calculateSettlements(event: Event, config?: SettlementRules): SettlementCalculation[] {
   const { participants, venues } = event
   const settlementConfig = config || getSettlementConfig()
+  
+  console.log('Calculating settlements with config:', settlementConfig)
   
   return participants.map(participant => {
     let totalAmount = 0
@@ -202,7 +177,8 @@ export function calculateSettlementTransfers(paymentSummaries: PaymentSummary[])
 /**
  * 精算データの全体計算
  */
-export function calculateFullSettlement(event: Event, config?: SettlementConfig) {
+export function calculateFullSettlement(event: Event, config?: SettlementRules) {
+  console.log('calculateFullSettlement called with config:', config)
   const settlements = calculateSettlements(event, config)
   const paymentSummaries = calculatePaymentSummary(event, settlements)
   const transfers = calculateSettlementTransfers(paymentSummaries)
