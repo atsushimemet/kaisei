@@ -512,7 +512,7 @@ export default function NewEventPage() {
                             <label className="text-xs text-gray-600">総金額</label>
                             <input
                               type="number"
-                              value={editVenueData?.totalAmount || 0}
+                              value={editVenueData?.totalAmount === 0 ? '' : editVenueData?.totalAmount || ''}
                               onChange={(e) => setEditVenueData(prev => prev ? {...prev, totalAmount: parseInt(e.target.value) || 0} : null)}
                               className="w-full px-2 py-1 border rounded text-sm"
                               placeholder="総金額"
@@ -626,7 +626,7 @@ export default function NewEventPage() {
                 </label>
                 <input
                   type="number"
-                  value={currentVenue.totalAmount}
+                  value={currentVenue.totalAmount === 0 ? '' : currentVenue.totalAmount}
                   onChange={(e) => setCurrentVenue(prev => ({ ...prev, totalAmount: parseInt(e.target.value) || 0 }))}
                   placeholder="例: 18000"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
