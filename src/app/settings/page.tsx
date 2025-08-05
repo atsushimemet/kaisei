@@ -1,12 +1,15 @@
 'use client'
 
-import { SettlementRules, DEFAULT_SETTLEMENT_RULES } from '@/types'
-import { Save } from 'lucide-react'
+import { DEFAULT_SETTLEMENT_RULES, SettlementRules } from '@/types'
+import { ArrowLeft, Save } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function SettingsPage() {
+  const router = useRouter()
   const [rules, setRules] = useState<SettlementRules>(DEFAULT_SETTLEMENT_RULES)
   const [saved, setSaved] = useState(false)
+  const [fromNewEventPage, setFromNewEventPage] = useState(false)
 
   useEffect(() => {
     // ローカルストレージから設定を読み込み
@@ -24,7 +27,34 @@ export default function SettingsPage() {
     } else {
       console.log('No saved settings found, using defaults')
     }
+
+    // 新しい飲み会作成画面から来たかどうかをチェック
+    const fromNewEvent = localStorage.getItem('fromNewEventPage') === 'true'
+    const navigatingToSettings = localStorage.getItem('navigatingToSettings') === 'true'
+    
+    console.log('🔍 [SettingsPage] フラグ確認:')
+    console.log('- fromNewEventPage:', fromNewEvent)
+    console.log('- navigatingToSettings:', navigatingToSettings)
+    
+    // 新しい飲み会作成画面から来た場合のみ戻るボタンを表示
+    if (fromNewEvent || navigatingToSettings) {
+      setFromNewEventPage(true)
+      console.log('✅ [SettingsPage] 新しい飲み会作成画面から来ました')
+    } else {
+      setFromNewEventPage(false)
+      console.log('ℹ️ [SettingsPage] 直接アクセスまたは他の画面から来ました')
+    }
+    
+    // フラグをクリア（ただし、fromNewEventPageは保持）
+    localStorage.removeItem('navigatingToSettings')
   }, [])
+
+  const handleBackToNewEvent = () => {
+    console.log('🔄 [SettingsPage] 新しい飲み会作成画面に戻ります')
+    // フラグをクリア
+    localStorage.removeItem('fromNewEventPage')
+    router.push('/events/new')
+  }
 
   const handleSave = () => {
     const configToSave = JSON.stringify(rules)
@@ -70,7 +100,18 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">設定</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">設定</h1>
+        {fromNewEventPage && (
+          <button
+            onClick={handleBackToNewEvent}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>飲み会作成に戻る</span>
+          </button>
+        )}
+      </div>
 
       <div className="space-y-8">
         {/* 性別による傾斜配分 */}
