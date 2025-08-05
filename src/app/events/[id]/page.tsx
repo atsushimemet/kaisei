@@ -855,7 +855,7 @@ export default function EventDetailPage() {
                         className="px-3 py-2 sm:px-4 sm:py-2.5 bg-green-600 text-white text-xs sm:text-sm rounded-md hover:bg-green-700 transition-colors flex items-center space-x-1.5 flex-shrink-0"
                       >
                         <Send className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="whitespace-nowrap">精算をお願い</span>
+                        <span className="whitespace-nowrap"> 精算をお願い</span>
                       </button>
                     </div>
                     
