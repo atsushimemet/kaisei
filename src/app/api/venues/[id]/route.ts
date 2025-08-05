@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { name, googleMapsUrl, totalAmount, paidBy } = body
+    const { name, googleMapsUrl, totalAmount, paidBy, venueOrder } = body
 
     // データ検証
     if (!name?.trim()) {
@@ -39,16 +39,23 @@ export async function PUT(
       )
     }
 
+    const updateData: any = {
+      name: name.trim(),
+      googleMapsUrl: googleMapsUrl?.trim() || null,
+      totalAmount: parseInt(totalAmount),
+      paidBy: paidBy.trim(),
+    }
+
+    // venueOrderが提供されている場合は追加
+    if (venueOrder !== undefined) {
+      updateData.venueOrder = parseInt(venueOrder)
+    }
+
     const venue = await prisma.venue.update({
       where: {
         id: venueId,
       },
-      data: {
-        name: name.trim(),
-        googleMapsUrl: googleMapsUrl?.trim() || null,
-        totalAmount: parseInt(totalAmount),
-        paidBy: paidBy.trim(),
-      },
+      data: updateData,
     })
 
     return NextResponse.json(venue)

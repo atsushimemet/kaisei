@@ -1,7 +1,7 @@
 'use client'
 
-import { Event, SettlementCalculation, PaymentSummary, SettlementTransfer, Participant, Venue } from '@/types'
-import { Calculator, Copy, MessageSquare, ArrowRight, Edit, Plus, Save, X, Trash2 } from 'lucide-react'
+import { Event, Participant, PaymentSummary, SettlementCalculation, SettlementTransfer, Venue } from '@/types'
+import { ArrowRight, Calculator, Copy, Edit, MessageSquare, Plus, Save, Trash2, X } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -282,17 +282,27 @@ export default function EventDetailPage() {
     if (!newVenue.name.trim() || !newVenue.paidBy.trim() || newVenue.totalAmount <= 0) return
 
     try {
+      // 現在表示されているお店の最大のvenueOrderを計算
+      const maxVenueOrder = event?.venues && event.venues.length > 0 
+        ? Math.max(...event.venues.map(v => v.venueOrder))
+        : 0
+
+      const venueData = {
+        ...newVenue,
+        venueOrder: maxVenueOrder + 1
+      }
+
       const response = await fetch(`/api/events/${params.id}/venues`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newVenue),
+        body: JSON.stringify(venueData),
       })
 
       if (response.ok) {
         await fetchEvent()
         setShowAddVenue(false)
         setNewVenue({
-          venueOrder: (event?.venues.length || 0) + 1,
+          venueOrder: 1,
           name: '',
           googleMapsUrl: '',
           totalAmount: 0,
