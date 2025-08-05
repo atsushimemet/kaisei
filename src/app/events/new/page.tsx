@@ -753,40 +753,51 @@ export default function NewEventPage() {
                     min="1"
                   />
                 </div>
-                <input
-                  type="text"
-                  value={currentVenue.name}
-                  onChange={(e) => setCurrentVenue(prev => ({ ...prev, name: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="店名"
-                />
-                <input
-                  type="number"
-                  value={currentVenue.totalAmount === 0 ? '' : currentVenue.totalAmount}
-                  onChange={(e) => setCurrentVenue(prev => ({ ...prev, totalAmount: parseInt(e.target.value) || 0 }))}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="総金額"
-                />
-                <select
-                  value={currentVenue.paidBy}
-                  onChange={(e) => setCurrentVenue(prev => ({ ...prev, paidBy: e.target.value }))}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">支払者を選択</option>
-                  {formData.participants.map((participant) => (
-                    <option key={participant.nickname} value={participant.nickname}>
-                      {participant.nickname}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={addVenue}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4 inline mr-1" />
-                  追加
-                </button>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">店名</label>
+                  <input
+                    type="text"
+                    value={currentVenue.name}
+                    onChange={(e) => setCurrentVenue(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="店名"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">総金額</label>
+                  <input
+                    type="number"
+                    value={currentVenue.totalAmount === 0 ? '' : currentVenue.totalAmount}
+                    onChange={(e) => setCurrentVenue(prev => ({ ...prev, totalAmount: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="総金額"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">支払者</label>
+                  <select
+                    value={currentVenue.paidBy}
+                    onChange={(e) => setCurrentVenue(prev => ({ ...prev, paidBy: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">支払者を選択</option>
+                    {formData.participants.map((participant) => (
+                      <option key={participant.nickname} value={participant.nickname}>
+                        {participant.nickname}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={addVenue}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4 inline mr-1" />
+                    追加
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -808,49 +819,60 @@ export default function NewEventPage() {
                             min="1"
                           />
                         </div>
-                        <input
-                          type="text"
-                          value={editVenueData?.name || ''}
-                          onChange={(e) => setEditVenueData(prev => prev ? {...prev, name: e.target.value} : null)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="店名"
-                        />
-                        <input
-                          type="number"
-                          value={editVenueData?.totalAmount === 0 ? '' : editVenueData?.totalAmount || ''}
-                          onChange={(e) => setEditVenueData(prev => prev ? {...prev, totalAmount: parseInt(e.target.value) || 0} : null)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="総金額"
-                        />
-                        <select
-                          value={editVenueData?.paidBy || ''}
-                          onChange={(e) => setEditVenueData(prev => prev ? {...prev, paidBy: e.target.value} : null)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">支払者を選択</option>
-                          {formData.participants.map((participant) => (
-                            <option key={participant.nickname} value={participant.nickname}>
-                              {participant.nickname}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="flex space-x-2">
-                          <button
-                            type="button"
-                            onClick={saveVenue}
-                            className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">店名</label>
+                          <input
+                            type="text"
+                            value={editVenueData?.name || ''}
+                            onChange={(e) => setEditVenueData(prev => prev ? {...prev, name: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="店名"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">総金額</label>
+                          <input
+                            type="number"
+                            value={editVenueData?.totalAmount === 0 ? '' : editVenueData?.totalAmount || ''}
+                            onChange={(e) => setEditVenueData(prev => prev ? {...prev, totalAmount: parseInt(e.target.value) || 0} : null)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="総金額"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">支払者</label>
+                          <select
+                            value={editVenueData?.paidBy || ''}
+                            onChange={(e) => setEditVenueData(prev => prev ? {...prev, paidBy: e.target.value} : null)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <Save className="w-4 h-4 inline mr-1" />
-                            保存
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelEditVenue}
-                            className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                          >
-                            <X className="w-4 h-4 inline mr-1" />
-                            キャンセル
-                          </button>
+                            <option value="">支払者を選択</option>
+                            {formData.participants.map((participant) => (
+                              <option key={participant.nickname} value={participant.nickname}>
+                                {participant.nickname}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-end">
+                          <div className="flex space-x-2 w-full">
+                            <button
+                              type="button"
+                              onClick={saveVenue}
+                              className="flex-1 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                            >
+                              <Save className="w-4 h-4 inline mr-1" />
+                              保存
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEditVenue}
+                              className="flex-1 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                            >
+                              <X className="w-4 h-4 inline mr-1" />
+                              キャンセル
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
