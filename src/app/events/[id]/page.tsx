@@ -2,7 +2,7 @@
 
 import ClientLogger from '@/components/ClientLogger'
 import { Event, Participant, PaymentSummary, SettlementCalculation, SettlementTransfer, Venue } from '@/types'
-import { ArrowRight, Calculator, Copy, Edit, MessageSquare, Plus, Save, Trash2, X } from 'lucide-react'
+import { ArrowRight, Calculator, ChevronDown, ChevronRight, Copy, Edit, MessageSquare, Plus, Save, Trash2, X } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -15,6 +15,9 @@ export default function EventDetailPage() {
   const [transfers, setTransfers] = useState<SettlementTransfer[]>([])
   const [loading, setLoading] = useState(true)
   const [calculating, setCalculating] = useState(false)
+  
+  // アコーディオン状態管理
+  const [expandedAccordions, setExpandedAccordions] = useState<{[key: string]: boolean}>({})
   
   // 編集状態管理
   const [editingParticipant, setEditingParticipant] = useState<number | null>(null)
@@ -117,6 +120,13 @@ export default function EventDetailPage() {
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString()
+  }
+
+  const toggleAccordion = (key: string) => {
+    setExpandedAccordions(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
   }
 
   const generateSettlementMessage = (summary: PaymentSummary, transfers: SettlementTransfer[]) => {
@@ -822,23 +832,164 @@ export default function EventDetailPage() {
                     </div>
                     
                     <div className="grid md:grid-cols-3 gap-4 mb-4">
+                      {/* 支払い総額アコーディオン */}
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
-                          ¥{formatCurrency(summary.totalPaid)}
-                        </div>
-                        <div className="text-sm text-gray-600">支払い総額</div>
+                        <button
+                          onClick={() => toggleAccordion(`paid-${summary.nickname}`)}
+                          className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                        >
+                          <div>
+                            <div className="text-2xl font-bold text-blue-600">
+                              ¥{formatCurrency(summary.totalPaid)}
+                            </div>
+                            <div className="text-sm text-gray-600 flex items-center justify-center">
+                              支払い総額
+                              {expandedAccordions[`paid-${summary.nickname}`] ? (
+                                <ChevronDown className="w-4 h-4 ml-1" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 ml-1" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        {expandedAccordions[`paid-${summary.nickname}`] && (
+                          <div className="mt-2 p-3 bg-blue-50 rounded-lg text-left">
+                            <h5 className="font-medium text-blue-900 mb-2">支払い詳細</h5>
+                            <div className="space-y-1 text-sm text-blue-800">
+                              {(() => {
+                                const paidVenues = event.venues.filter(venue => venue.paidBy === summary.nickname)
+                                if (paidVenues.length === 0) {
+                                  return <p>支払ったお店はありません</p>
+                                }
+                                return paidVenues
+                                  .sort((a, b) => a.venueOrder - b.venueOrder)
+                                  .map((venue) => (
+                                    <div key={venue.id} className="flex justify-between">
+                                      <span>{venue.venueOrder}次会: {venue.name}</span>
+                                      <span>¥{formatCurrency(venue.totalAmount)}</span>
+                                    </div>
+                                  ))
+                              })()}
+                              <div className="border-t pt-1 mt-2 font-medium flex justify-between">
+                                <span>合計</span>
+                                <span>¥{formatCurrency(summary.totalPaid)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* 負担総額アコーディオン */}
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          ¥{formatCurrency(summary.totalOwed)}
-                        </div>
-                        <div className="text-sm text-gray-600">負担総額</div>
+                        <button
+                          onClick={() => toggleAccordion(`owed-${summary.nickname}`)}
+                          className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                        >
+                          <div>
+                            <div className="text-2xl font-bold text-green-600">
+                              ¥{formatCurrency(summary.totalOwed)}
+                            </div>
+                            <div className="text-sm text-gray-600 flex items-center justify-center">
+                              負担総額
+                              {expandedAccordions[`owed-${summary.nickname}`] ? (
+                                <ChevronDown className="w-4 h-4 ml-1" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 ml-1" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        {expandedAccordions[`owed-${summary.nickname}`] && (
+                          <div className="mt-2 p-3 bg-green-50 rounded-lg text-left">
+                            <h5 className="font-medium text-green-900 mb-2">負担詳細</h5>
+                            <div className="space-y-2 text-sm text-green-800">
+                              {(() => {
+                                const settlement = settlements.find(s => s.participantId === summary.participantId)
+                                if (!settlement) {
+                                  return <p>計算データがありません</p>
+                                }
+                                return settlement.breakdown.map((item) => {
+                                  const venue = event.venues.find(v => v.id === item.venueId)
+                                  const venueOrder = venue?.venueOrder || 1
+                                  return (
+                                    <div key={item.venueId} className="space-y-1">
+                                      <div className="font-medium">{venueOrder}次会: {item.venueName}</div>
+                                    <div className="ml-2 text-xs space-y-1">
+                                      <div className="flex justify-between">
+                                        <span>基本金額:</span>
+                                        <span>¥{formatCurrency(item.baseAmount)}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>参加率: {item.factors.stayRange}</span>
+                                        <span>性別: {item.factors.gender}倍</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>役割: {item.factors.role}倍</span>
+                                        <span className="font-medium">¥{formatCurrency(item.adjustedAmount)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  )
+                                })
+                              })()}
+                              <div className="border-t pt-1 mt-2 font-medium flex justify-between">
+                                <span>合計</span>
+                                <span>¥{formatCurrency(summary.totalOwed)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* 差額アコーディオン */}
                       <div className="text-center">
-                        <div className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          ¥{formatCurrency(summary.balance)}
-                        </div>
-                        <div className="text-sm text-gray-600">差額</div>
+                        <button
+                          onClick={() => toggleAccordion(`balance-${summary.nickname}`)}
+                          className="flex items-center justify-center w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                        >
+                          <div>
+                            <div className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ¥{formatCurrency(summary.balance)}
+                            </div>
+                            <div className="text-sm text-gray-600 flex items-center justify-center">
+                              差額
+                              {expandedAccordions[`balance-${summary.nickname}`] ? (
+                                <ChevronDown className="w-4 h-4 ml-1" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 ml-1" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        {expandedAccordions[`balance-${summary.nickname}`] && (
+                          <div className="mt-2 p-3 bg-gray-50 rounded-lg text-left">
+                            <h5 className="font-medium text-gray-900 mb-2">差額計算</h5>
+                            <div className="space-y-1 text-sm text-gray-700">
+                              <div className="flex justify-between">
+                                <span>支払い総額:</span>
+                                <span>¥{formatCurrency(summary.totalPaid)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>負担総額:</span>
+                                <span>¥{formatCurrency(summary.totalOwed)}</span>
+                              </div>
+                              <div className="border-t pt-1 mt-1 font-medium flex justify-between">
+                                <span>差額:</span>
+                                <span className={summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                  ¥{formatCurrency(summary.balance)}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-2">
+                                {summary.balance > 0 
+                                  ? '他の参加者から受け取る金額' 
+                                  : summary.balance < 0 
+                                    ? '他の参加者に支払う金額'
+                                    : '精算不要（収支が一致）'
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
