@@ -2,7 +2,7 @@
 
 import ClientLogger from '@/components/ClientLogger'
 import { Event, Participant, PaymentSummary, SettlementCalculation, SettlementTransfer, Venue } from '@/types'
-import { ArrowRight, Calculator, ChevronDown, ChevronRight, Copy, Edit, MessageSquare, Plus, Save, Trash2, X } from 'lucide-react'
+import { ArrowRight, Calculator, ChevronDown, ChevronRight, Copy, Edit, MessageSquare, Plus, Save, Send, Trash2, X } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -18,6 +18,9 @@ export default function EventDetailPage() {
   
   // アコーディオン状態管理
   const [expandedAccordions, setExpandedAccordions] = useState<{[key: string]: boolean}>({})
+  
+  // コピー成功フィードバック
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null)
   
   // 編集状態管理
   const [editingParticipant, setEditingParticipant] = useState<number | null>(null)
@@ -114,8 +117,13 @@ export default function EventDetailPage() {
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
+  const copyToClipboard = (text: string, participantName?: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedMessage(participantName ? `${participantName}さんの精算メッセージをコピーしました` : 'コピーしました')
+      setTimeout(() => setCopiedMessage(null), 3000)
+    }).catch((err) => {
+      console.error('コピーに失敗しました:', err)
+    })
   }
 
   const formatCurrency = (amount: number) => {
@@ -129,20 +137,35 @@ export default function EventDetailPage() {
     }))
   }
 
-  const generateSettlementMessage = (summary: PaymentSummary, transfers: SettlementTransfer[]) => {
-    let message = `${summary.nickname}さんの精算結果\n\n`
+  const generateSettlementMessage = (summary: PaymentSummary, participantTransfers: SettlementTransfer[]) => {
+    let message = `【精算のお願い】\n${summary.nickname}さん\n\n`
+    message += `お疲れさまでした！\n`
+    message += `${event?.title || '飲み会'} の精算をお願いします。\n\n`
+    
+    message += `■ 精算内容\n`
     message += `支払い総額: ¥${formatCurrency(summary.totalPaid)}\n`
     message += `負担総額: ¥${formatCurrency(summary.totalOwed)}\n`
-    message += `差額: ¥${formatCurrency(summary.balance)}\n\n`
-
-    if (transfers.length > 0) {
-      message += '精算方法:\n'
-      transfers.forEach((transfer, index) => {
-        message += `${index + 1}. ${transfer.from} → ${transfer.to}: ¥${formatCurrency(transfer.amount)}\n`
-      })
+    message += `差額: ¥${formatCurrency(summary.balance)}`
+    
+    if (summary.balance > 0) {
+      message += `（受け取り）\n\n`
+    } else if (summary.balance < 0) {
+      message += `（支払い）\n\n`
     } else {
-      message += '精算は不要です。'
+      message += `（収支一致）\n\n`
     }
+
+    if (participantTransfers.length > 0) {
+      message += `■ 精算方法\n`
+      participantTransfers.forEach((transfer) => {
+        message += `${transfer.from} → ${transfer.to}: ¥${formatCurrency(transfer.amount)}\n`
+      })
+      message += `\n`
+    } else if (summary.balance === 0) {
+      message += `■ 精算方法\n精算は不要です（収支が一致しています）\n\n`
+    }
+
+    message += `よろしくお願いします🙏`
 
     return message
   }
@@ -824,10 +847,15 @@ export default function EventDetailPage() {
                         {summary.nickname}さんの精算結果
                       </h3>
                       <button
-                        onClick={() => copyToClipboard(generateSettlementMessage(summary, transfers.filter(t => t.from === summary.nickname || t.to === summary.nickname)))}
-                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => {
+                          const participantTransfers = transfers.filter(t => t.from === summary.nickname || t.to === summary.nickname)
+                          const message = generateSettlementMessage(summary, participantTransfers)
+                          copyToClipboard(message, summary.nickname)
+                        }}
+                        className="px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors flex items-center space-x-1"
                       >
-                        <Copy className="w-4 h-4" />
+                        <Send className="w-4 h-4" />
+                        <span>精算をお願い</span>
                       </button>
                     </div>
                     
@@ -1066,6 +1094,13 @@ export default function EventDetailPage() {
             </div>
           )}
         </div>
+
+        {/* コピー成功メッセージ */}
+        {copiedMessage && (
+          <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+            {copiedMessage}
+          </div>
+        )}
       </div>
     </>
   )
