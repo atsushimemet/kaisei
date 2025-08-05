@@ -1,6 +1,6 @@
 'use client'
 
-import { Home, Settings } from 'lucide-react'
+import { Home, List, Settings } from 'lucide-react'
 import Link from 'next/link'
 
 export default function Header() {
@@ -23,14 +23,24 @@ export default function Header() {
             <span className="text-xl font-semibold">飲み会精算アプリ</span>
           </Link>
           
-          <Link 
-            href="/settings" 
-            onClick={handleSettingsClick}
-            className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Settings className="w-5 h-5" />
-            <span className="text-sm font-medium">設定</span>
-          </Link>
+          <div className="flex items-center space-x-4">
+            <Link 
+              href="/events" 
+              className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              <List className="w-5 h-5" />
+              <span className="text-sm font-medium">一覧</span>
+            </Link>
+            
+            <Link 
+              href="/settings" 
+              onClick={handleSettingsClick}
+              className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-sm font-medium">設定</span>
+            </Link>
+          </div>
         </div>
       </div>
     </header>
