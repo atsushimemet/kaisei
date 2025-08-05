@@ -1,11 +1,22 @@
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { authOptions } from '../../auth/[...nextauth]/route'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // セッションを取得してユーザーIDを確認
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { nickname, gender, role, stayRange } = body
 
@@ -46,7 +57,27 @@ export async function PUT(
       )
     }
 
-    const participant = await prisma.participant.update({
+    // 参加者がログインユーザーのイベントに属しているかチェック
+    const participant = await prisma.participant.findUnique({
+      where: { id: participantId },
+      include: { event: true }
+    })
+
+    if (!participant) {
+      return NextResponse.json(
+        { error: 'Participant not found' },
+        { status: 404 }
+      )
+    }
+
+    if (participant.event.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
+    const updatedParticipant = await prisma.participant.update({
       where: {
         id: participantId,
       },
@@ -54,11 +85,11 @@ export async function PUT(
         nickname: nickname.trim(),
         gender,
         role,
-        stayRange,
+        stayRange: JSON.stringify(stayRange),
       },
     })
 
-    return NextResponse.json(participant)
+    return NextResponse.json(updatedParticipant)
   } catch (error) {
     console.error('Error updating participant:', error)
     return NextResponse.json(
@@ -73,9 +104,46 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // セッションを取得してユーザーIDを確認
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const participantId = parseInt(params.id)
+    if (isNaN(participantId)) {
+      return NextResponse.json(
+        { error: '無効な参加者IDです' },
+        { status: 400 }
+      )
+    }
+
+    // 参加者がログインユーザーのイベントに属しているかチェック
+    const participant = await prisma.participant.findUnique({
+      where: { id: participantId },
+      include: { event: true }
+    })
+
+    if (!participant) {
+      return NextResponse.json(
+        { error: 'Participant not found' },
+        { status: 404 }
+      )
+    }
+
+    if (participant.event.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
     await prisma.participant.delete({
       where: {
-        id: parseInt(params.id),
+        id: participantId,
       },
     })
 

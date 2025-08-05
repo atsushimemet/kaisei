@@ -1,16 +1,28 @@
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { authOptions } from '../auth/[...nextauth]/route'
 
 export async function POST(request: NextRequest) {
   try {
+    // セッションを取得してユーザーIDを確認
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { title, eventDate, participants, venues } = body
 
-    // 飲み会を作成
+    // 飲み会を作成（ユーザーIDを設定）
     const event = await prisma.event.create({
       data: {
         title,
         eventDate: new Date(eventDate),
+        userId: session.user.id, // ユーザーIDを設定
         participants: {
           create: participants.map((participant: any) => ({
             nickname: participant.nickname,
@@ -47,7 +59,20 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    // セッションを取得してユーザーIDを確認
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // ログインユーザーのイベントのみを取得
     const events = await prisma.event.findMany({
+      where: {
+        userId: session.user.id, // ユーザーIDでフィルタリング
+      },
       include: {
         participants: true,
         venues: true,

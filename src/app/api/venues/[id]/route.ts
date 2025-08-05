@@ -1,11 +1,22 @@
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { authOptions } from '../../auth/[...nextauth]/route'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // セッションを取得してユーザーIDを確認
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { name, googleMapsUrl, totalAmount, paidBy, venueOrder } = body
 
@@ -39,6 +50,26 @@ export async function PUT(
       )
     }
 
+    // 会場がログインユーザーのイベントに属しているかチェック
+    const venue = await prisma.venue.findUnique({
+      where: { id: venueId },
+      include: { event: true }
+    })
+
+    if (!venue) {
+      return NextResponse.json(
+        { error: 'Venue not found' },
+        { status: 404 }
+      )
+    }
+
+    if (venue.event.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
     const updateData: any = {
       name: name.trim(),
       googleMapsUrl: googleMapsUrl?.trim() || null,
@@ -51,14 +82,14 @@ export async function PUT(
       updateData.venueOrder = parseInt(venueOrder)
     }
 
-    const venue = await prisma.venue.update({
+    const updatedVenue = await prisma.venue.update({
       where: {
         id: venueId,
       },
       data: updateData,
     })
 
-    return NextResponse.json(venue)
+    return NextResponse.json(updatedVenue)
   } catch (error) {
     console.error('Error updating venue:', error)
     return NextResponse.json(
@@ -73,6 +104,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // セッションを取得してユーザーIDを確認
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     console.log('🗑️ [DELETE /venues] お店削除開始')
     const venueId = parseInt(params.id)
     if (isNaN(venueId)) {
@@ -88,7 +128,7 @@ export async function DELETE(
     // 削除するvenueの情報を取得
     const venueToDelete = await prisma.venue.findUnique({
       where: { id: venueId },
-      select: { eventId: true, venueOrder: true }
+      include: { event: true }
     })
 
     if (!venueToDelete) {
@@ -96,6 +136,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'お店が見つかりません' },
         { status: 404 }
+      )
+    }
+
+    // 会場がログインユーザーのイベントに属しているかチェック
+    if (venueToDelete.event.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
       )
     }
 

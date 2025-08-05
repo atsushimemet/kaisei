@@ -1,11 +1,22 @@
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { authOptions } from '../../auth/[...nextauth]/route'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // セッションを取得してユーザーIDを確認
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const event = await prisma.event.findUnique({
       where: {
         id: parseInt(params.id),
@@ -32,6 +43,14 @@ export async function GET(
       )
     }
 
+    // イベントがログインユーザーのものかチェック
+    if (event.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
     return NextResponse.json(event)
   } catch (error) {
     console.error('Error fetching event:', error)
@@ -47,9 +66,18 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // セッションを取得してユーザーIDを確認
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const eventId = parseInt(params.id)
     
-    // イベントが存在するかチェック
+    // イベントが存在し、ログインユーザーのものかチェック
     const existingEvent = await prisma.event.findUnique({
       where: { id: eventId }
     })
@@ -58,6 +86,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Event not found' },
         { status: 404 }
+      )
+    }
+
+    // イベントがログインユーザーのものかチェック
+    if (existingEvent.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
       )
     }
 
