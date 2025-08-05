@@ -29,7 +29,7 @@ export default function NewEventPage() {
     venueOrder: 1,
     name: '',
     totalAmount: 0,
-    paymentMethod: '',
+    paidBy: '',
   })
 
   const addParticipant = () => {
@@ -59,7 +59,7 @@ export default function NewEventPage() {
   }
 
   const addVenue = () => {
-    if (currentVenue.name.trim() && currentVenue.totalAmount > 0) {
+    if (currentVenue.name.trim() && currentVenue.totalAmount > 0 && currentVenue.paidBy.trim()) {
       setFormData(prev => ({
         ...prev,
         venues: [...prev.venues, { ...currentVenue }],
@@ -68,7 +68,7 @@ export default function NewEventPage() {
         venueOrder: prev.venueOrder + 1,
         name: '',
         totalAmount: 0,
-        paymentMethod: '',
+        paidBy: '',
       }))
     }
   }
@@ -114,16 +114,6 @@ export default function NewEventPage() {
     }
   }
 
-  const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case 'credit_card': return 'クレジットカード'
-      case 'cash': return '現金'
-      case 'paypay': return 'PayPay'
-      case 'quicpay': return 'QUICPay'
-      case 'other': return 'その他'
-      default: return method
-    }
-  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -345,7 +335,7 @@ export default function NewEventPage() {
                     <div>
                       <span className="font-medium">{venue.venueOrder}次会: {venue.name}</span>
                       <span className="text-sm text-gray-500 ml-2">
-                        ¥{venue.totalAmount.toLocaleString()}
+                        ¥{venue.totalAmount.toLocaleString()} ({venue.paidBy}が支払い)
                       </span>
                     </div>
                     <button
@@ -391,19 +381,19 @@ export default function NewEventPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  支払方法
+                  支払者
                 </label>
                 <select
-                  value={currentVenue.paymentMethod}
-                  onChange={(e) => setCurrentVenue(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                  value={currentVenue.paidBy}
+                  onChange={(e) => setCurrentVenue(prev => ({ ...prev, paidBy: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option value="">選択してください</option>
-                  <option value="credit_card">クレジットカード</option>
-                  <option value="cash">現金</option>
-                  <option value="paypay">PayPay</option>
-                  <option value="quicpay">QUICPay</option>
-                  <option value="other">その他</option>
+                  {formData.participants.map((participant, index) => (
+                    <option key={index} value={participant.nickname}>
+                      {participant.nickname}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex items-end">

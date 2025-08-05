@@ -46,7 +46,7 @@ model Venue {
   name          String
   googleMapsUrl String?  @map("google_maps_url")
   totalAmount   Int      @map("total_amount")
-  paymentMethod String?  @map("payment_method")
+  paidBy        String   @map("paid_by")
   createdAt     DateTime @default(now()) @map("created_at")
   
   event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)

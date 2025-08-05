@@ -27,7 +27,7 @@ export interface Venue {
   name: string
   googleMapsUrl?: string
   totalAmount: number
-  paymentMethod?: string
+  paidBy: string // 支払者のニックネーム
   createdAt: Date
 }
 
@@ -68,7 +68,7 @@ export interface CreateVenueData {
   name: string
   googleMapsUrl?: string
   totalAmount: number
-  paymentMethod?: string
+  paidBy: string // 支払者のニックネーム
 }
 
 export interface SettlementCalculation {
@@ -86,4 +86,55 @@ export interface SettlementCalculation {
       role: number
     }
   }[]
+}
+
+export interface PaymentSummary {
+  participantId: number
+  nickname: string
+  totalPaid: number // 実際に支払った金額
+  totalOwed: number // 支払い義務のある金額
+  balance: number // 差額（正の値：お金をもらう、負の値：支払う）
+}
+
+export interface SettlementTransfer {
+  from: string // 支払う人のニックネーム
+  to: string // 受け取る人のニックネーム
+  amount: number // 精算金額
+}
+
+export interface SettlementRules {
+  genderMultiplier: {
+    male: number
+    female: number
+    unspecified: number
+  }
+  roleMultiplier: {
+    senior: number
+    junior: number
+    flat: number
+  }
+  stayRangeMultiplier: {
+    first: number
+    second: number
+    third: number
+  }
+}
+
+// 統一されたデフォルト設定
+export const DEFAULT_SETTLEMENT_RULES: SettlementRules = {
+  genderMultiplier: {
+    male: 1.2,     // 男性は1.2倍
+    female: 0.8,   // 女性は0.8倍
+    unspecified: 1.0 // 未設定は1.0倍
+  },
+  roleMultiplier: {
+    senior: 1.3,   // 先輩は1.3倍
+    junior: 0.7,   // 後輩は0.7倍
+    flat: 1.0      // フラットは1.0倍
+  },
+  stayRangeMultiplier: {
+    first: 1.0,    // 1次会は1.0倍（基準）
+    second: 1.0,   // 2次会は1.0倍（基準）
+    third: 1.0     // 3次会は1.0倍（基準）
+  }
 } 

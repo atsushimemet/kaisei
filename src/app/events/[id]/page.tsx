@@ -1,15 +1,16 @@
 'use client'
 
-import { formatCurrency, generateSettlementMessage } from '@/lib/utils'
-import { Event, SettlementCalculation } from '@/types'
-import { Calculator, Copy, MessageSquare } from 'lucide-react'
+import { Event, SettlementCalculation, PaymentSummary, SettlementTransfer } from '@/types'
+import { Calculator, Copy, MessageSquare, ArrowRight } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function EventDetailPage() {
   const params = useParams()
   const [event, setEvent] = useState<Event | null>(null)
-  const [calculations, setCalculations] = useState<SettlementCalculation[]>([])
+  const [settlements, setSettlements] = useState<SettlementCalculation[]>([])
+  const [paymentSummaries, setPaymentSummaries] = useState<PaymentSummary[]>([])
+  const [transfers, setTransfers] = useState<SettlementTransfer[]>([])
   const [loading, setLoading] = useState(true)
   const [calculating, setCalculating] = useState(false)
 
@@ -35,20 +36,39 @@ export default function EventDetailPage() {
     setCalculating(true)
     try {
       // ローカルストレージから設定を取得
-      const savedRules = localStorage.getItem('settlementRules')
-      const rules = savedRules ? JSON.parse(savedRules) : null
+      let config = null
+      try {
+        const savedConfig = localStorage.getItem('settlementRules')
+        console.log('Raw savedConfig from localStorage:', savedConfig)
+        if (savedConfig) {
+          config = JSON.parse(savedConfig)
+          console.log('Parsed config:', config)
+        } else {
+          console.log('No config found in localStorage')
+        }
+      } catch (error) {
+        console.error('Error loading settlement config:', error)
+      }
 
+      console.log('Sending config to API:', config)
+
+      // 設定を含めてAPIを呼び出し
       const response = await fetch(`/api/events/${params.id}/settlements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ rules }),
+        body: JSON.stringify({ config }),
       })
+      
       if (response.ok) {
         const data = await response.json()
-        setCalculations(data.calculations)
-        setEvent(data.event)
+        console.log('API response:', data)
+        setSettlements(data.settlements)
+        setPaymentSummaries(data.paymentSummaries)
+        setTransfers(data.transfers)
+      } else {
+        console.error('API response error:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error calculating settlements:', error)
@@ -62,15 +82,35 @@ export default function EventDetailPage() {
     alert('クリップボードにコピーしました')
   }
 
-  const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case 'credit_card': return 'クレジットカード'
-      case 'cash': return '現金'
-      case 'paypay': return 'PayPay'
-      case 'quicpay': return 'QUICPay'
-      case 'other': return 'その他'
-      default: return method || '未設定'
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString()
+  }
+
+  const generateSettlementMessage = (summary: PaymentSummary, transfers: SettlementTransfer[]) => {
+    const incomingTransfers = transfers.filter(t => t.to === summary.nickname)
+    const outgoingTransfers = transfers.filter(t => t.from === summary.nickname)
+    
+    let message = `${summary.nickname}さんの精算結果\n\n`
+    message += `💰 実際の支払い: ¥${formatCurrency(summary.totalPaid)}\n`
+    message += `📊 支払い義務: ¥${formatCurrency(summary.totalOwed)}\n`
+    message += `⚖️ 差額: ¥${formatCurrency(Math.abs(summary.balance))} `
+    message += summary.balance >= 0 ? '(受け取り)\n\n' : '(支払い)\n\n'
+
+    if (outgoingTransfers.length > 0) {
+      message += '💸 支払い先:\n'
+      outgoingTransfers.forEach(transfer => {
+        message += `  → ${transfer.to}さんに ¥${formatCurrency(transfer.amount)}\n`
+      })
     }
+
+    if (incomingTransfers.length > 0) {
+      message += '💰 受け取り:\n'
+      incomingTransfers.forEach(transfer => {
+        message += `  ← ${transfer.from}さんから ¥${formatCurrency(transfer.amount)}\n`
+      })
+    }
+
+    return message
   }
 
   if (loading) {
@@ -135,9 +175,7 @@ export default function EventDetailPage() {
                     ¥{formatCurrency(venue.totalAmount)}
                   </span>
                 </div>
-                {venue.paymentMethod && (
-                  <p className="text-sm text-gray-500">支払方法: {getPaymentMethodLabel(venue.paymentMethod)}</p>
-                )}
+                <p className="text-sm text-gray-500">支払者: {venue.paidBy}さん</p>
               </div>
             ))}
           </div>
@@ -148,7 +186,7 @@ export default function EventDetailPage() {
       <div className="bg-white p-6 rounded-lg shadow-md mt-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">精算計算</h2>
-          {calculations.length === 0 && (
+          {paymentSummaries.length === 0 && (
             <button
               onClick={calculateSettlements}
               disabled={calculating}
@@ -160,69 +198,162 @@ export default function EventDetailPage() {
           )}
         </div>
 
-        {calculations.length > 0 && (
-          <div className="space-y-6">
-            {calculations.map((calculation) => {
-              const participant = event.participants.find(p => p.id === calculation.participantId)
-              if (!participant) return null
-
-              const message = generateSettlementMessage(participant, calculation, event)
-
-              return (
-                <div key={calculation.participantId} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {calculation.nickname} さん
-                    </h3>
-                    <span className="text-2xl font-bold text-blue-600">
-                      ¥{formatCurrency(calculation.amount)}
-                    </span>
-                  </div>
-
-                  {/* 内訳 */}
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-900 mb-2">内訳</h4>
-                    <div className="space-y-2">
-                      {calculation.breakdown.map((item, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span>{item.venueName}</span>
-                          <span>¥{formatCurrency(item.adjustedAmount)}</span>
+        {paymentSummaries.length > 0 && (
+          <div className="space-y-8">
+            {/* 使用した設定の表示 */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="text-sm font-medium text-blue-900 mb-2">📋 使用した設定</h4>
+              <div className="text-xs text-blue-800 space-y-2">
+                {(() => {
+                  let config = null
+                  let isDefault = true
+                  try {
+                    const savedConfig = localStorage.getItem('settlementRules')
+                    if (savedConfig) {
+                      config = JSON.parse(savedConfig)
+                      isDefault = false
+                    }
+                  } catch (error) {
+                    console.error('Error loading config for display:', error)
+                  }
+                  
+                  if (config) {
+                    return (
+                      <div className="space-y-2">
+                        <div className={`px-2 py-1 rounded text-xs font-medium ${isDefault ? 'bg-gray-200 text-gray-700' : 'bg-green-200 text-green-800'}`}>
+                          {isDefault ? 'デフォルト設定' : 'カスタム設定'}を使用
                         </div>
-                      ))}
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div>
+                            <span className="font-medium">性別調整:</span>
+                            <div className="ml-2">
+                              男性 {config.genderMultiplier?.male || 1.0}倍<br/>
+                              女性 {config.genderMultiplier?.female || 1.0}倍<br/>
+                              未設定 {config.genderMultiplier?.unspecified || 1.0}倍
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium">役割調整:</span>
+                            <div className="ml-2">
+                              先輩 {config.roleMultiplier?.senior || 1.0}倍<br/>
+                              後輩 {config.roleMultiplier?.junior || 1.0}倍<br/>
+                              フラット {config.roleMultiplier?.flat || 1.0}倍
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  } else {
+                    return (
+                      <div className="space-y-2">
+                        <div className="px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-700">
+                          デフォルト設定を使用
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          性別: 男性1.2倍, 女性0.8倍, 未設定1.0倍<br/>
+                          役割: 先輩1.3倍, 後輩0.7倍, フラット1.0倍
+                        </div>
+                      </div>
+                    )
+                  }
+                })()}
+              </div>
+            </div>
+
+            {/* 支払い状況サマリー */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">支払い状況</h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {paymentSummaries.map((summary) => (
+                  <div key={summary.participantId} className="border rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-2">{summary.nickname}さん</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>実際の支払い:</span>
+                        <span>¥{formatCurrency(summary.totalPaid)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>支払い義務:</span>
+                        <span>¥{formatCurrency(summary.totalOwed)}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold border-t pt-1">
+                        <span>差額:</span>
+                        <span className={summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {summary.balance >= 0 ? '+' : ''}¥{formatCurrency(summary.balance)}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
 
-                  {/* メッセージ */}
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-900 mb-2">支払案内メッセージ</h4>
-                    <div className="bg-gray-50 p-3 rounded-md">
-                      <pre className="whitespace-pre-wrap text-sm">{message}</pre>
+            {/* 精算取引 */}
+            {transfers.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">精算取引</h3>
+                <div className="space-y-3">
+                  {transfers.map((transfer, index) => (
+                    <div key={index} className="flex items-center p-3 bg-gray-50 rounded-md">
+                      <span className="font-medium">{transfer.from}さん</span>
+                      <ArrowRight className="w-4 h-4 mx-3 text-gray-500" />
+                      <span className="font-medium">{transfer.to}さん</span>
+                      <span className="ml-auto text-lg font-semibold text-blue-600">
+                        ¥{formatCurrency(transfer.amount)}
+                      </span>
                     </div>
-                  </div>
-
-                  {/* アクションボタン */}
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => copyToClipboard(message)}
-                      className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      メッセージをコピー
-                    </button>
-                    <button
-                      onClick={() => {
-                        // LINEで送信する処理（実装予定）
-                        alert('LINE送信機能は今後実装予定です')
-                      }}
-                      className="flex items-center px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      LINEで送信
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              )
-            })}
+              </div>
+            )}
+
+            {/* 個別メッセージ */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">個別精算メッセージ</h3>
+              <div className="space-y-4">
+                {paymentSummaries.map((summary) => {
+                  const message = generateSettlementMessage(summary, transfers)
+
+                  return (
+                    <div key={summary.participantId} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-semibold text-gray-900">
+                          {summary.nickname}さん
+                        </h4>
+                        <span className={`text-xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {summary.balance >= 0 ? '+' : ''}¥{formatCurrency(summary.balance)}
+                        </span>
+                      </div>
+
+                      <div className="mb-4">
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <pre className="whitespace-pre-wrap text-sm">{message}</pre>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => copyToClipboard(message)}
+                          className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          メッセージをコピー
+                        </button>
+                        <button
+                          onClick={() => {
+                            alert('LINE送信機能は今後実装予定です')
+                          }}
+                          className="flex items-center px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          LINEで送信
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>

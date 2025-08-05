@@ -1,8 +1,63 @@
-import { calculateSettlement } from '@/lib/utils'
-import { PrismaClient } from '@prisma/client'
+import { calculateFullSettlement } from '@/lib/settlement'
+import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 
-const prisma = new PrismaClient()
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // URLのクエリパラメータから設定を取得（オプション）
+    const { searchParams } = new URL(request.url)
+    const configParam = searchParams.get('config')
+    let config = null
+    
+    if (configParam) {
+      try {
+        config = JSON.parse(decodeURIComponent(configParam))
+      } catch (error) {
+        console.error('Error parsing config from query params:', error)
+      }
+    }
+
+    const event = await prisma.event.findUnique({
+      where: {
+        id: parseInt(params.id),
+      },
+      include: {
+        participants: true,
+        venues: {
+          orderBy: {
+            venueOrder: 'asc',
+          },
+        },
+        settlements: {
+          include: {
+            participant: true,
+          },
+        },
+      },
+    })
+
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    // 精算計算を実行（設定がある場合は使用）
+    const settlementData = calculateFullSettlement(event as any, config)
+
+    return NextResponse.json(settlementData)
+  } catch (error) {
+    console.error('Error calculating settlements:', error)
+    return NextResponse.json(
+      { error: 'Failed to calculate settlements' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -10,7 +65,7 @@ export async function POST(
 ) {
   try {
     const body = await request.json()
-    const { rules } = body
+    const { config } = body
 
     const event = await prisma.event.findUnique({
       where: {
@@ -33,23 +88,16 @@ export async function POST(
       )
     }
 
-    // デフォルトの傾斜ルール（設定が送信されていない場合）
-    const defaultRules = {
-      genderMultiplier: { male: 1.0, female: 1.0, unspecified: 1.0 },
-      roleMultiplier: { senior: 1.2, junior: 0.8, flat: 1.0 },
-      stayRangeMultiplier: { first: 1.0, second: 1.0, third: 1.0 },
-    }
+    // 精算計算を実行（クライアントから送信された設定を使用）
+    const settlementData = calculateFullSettlement(event as any, config)
 
-    // 精算計算
-    const calculations = calculateSettlement(
-      event.participants,
-      event.venues,
-      rules || defaultRules
-    )
+    // 精算結果をデータベースに保存（既存の精算データを削除してから新規作成）
+    await prisma.settlement.deleteMany({
+      where: { eventId: event.id },
+    })
 
-    // 精算結果をデータベースに保存
-    const settlements = await Promise.all(
-      calculations.map(async (calculation) => {
+    const dbSettlements = await Promise.all(
+      settlementData.settlements.map(async (calculation) => {
         return await prisma.settlement.create({
           data: {
             eventId: event.id,
@@ -66,8 +114,8 @@ export async function POST(
 
     return NextResponse.json({
       event,
-      settlements,
-      calculations,
+      dbSettlements,
+      ...settlementData,
     })
   } catch (error) {
     console.error('Error calculating settlements:', error)
