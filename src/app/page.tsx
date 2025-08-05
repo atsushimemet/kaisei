@@ -1,8 +1,35 @@
+'use client'
+
 import ClientLogger from '@/components/ClientLogger'
 import { Calculator, CreditCard, LogIn, Plus, Users, Zap } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function HomePage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  // ログイン済みの場合の処理
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      console.log('✅ [HomePage] ログイン済みユーザー:', session.user?.name)
+    }
+  }, [session, status])
+
+  const handleLoginClick = () => {
+    if (status === 'authenticated') {
+      // ログイン済みの場合は飲み会一覧ページに遷移
+      console.log('🔄 [HomePage] ログイン済みユーザーを飲み会一覧ページに遷移')
+      router.push('/events')
+    } else {
+      // 未ログインの場合はログインページに遷移
+      console.log('🔄 [HomePage] 未ログインユーザーをログインページに遷移')
+      router.push('/auth/signin')
+    }
+  }
+
   return (
     <>
       <ClientLogger componentName="HomePage" />
@@ -18,6 +45,13 @@ export default function HomePage() {
           <p className="text-gray-500 mt-2">
             3〜6人規模の飲み会に特化した精算支援ツール
           </p>
+          {status === 'authenticated' && (
+            <div className="mt-4 p-3 bg-green-50 rounded-lg inline-block">
+              <p className="text-green-700 text-sm">
+                👋 {session?.user?.name}さん、おかえりなさい！
+              </p>
+            </div>
+          )}
         </header>
 
         {/* メインコンテンツ */}
@@ -121,35 +155,44 @@ export default function HomePage() {
                     <LogIn className="w-8 h-8 text-green-600" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    ログインして管理
+                    {status === 'authenticated' ? '飲み会一覧を見る' : 'ログインして管理'}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    データを保存して継続的に管理
+                    {status === 'authenticated' 
+                      ? '保存された飲み会を管理・確認'
+                      : 'データを保存して継続的に管理'
+                    }
                   </p>
                 </div>
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">データを永続化</span>
+                    <span className="text-sm text-gray-700">
+                      {status === 'authenticated' ? 'データを永続化済み' : 'データを永続化'}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">過去の精算履歴を確認</span>
+                    <span className="text-sm text-gray-700">
+                      {status === 'authenticated' ? '過去の精算履歴を確認' : '過去の精算履歴を確認'}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">設定をカスタマイズ</span>
+                    <span className="text-sm text-gray-700">
+                      {status === 'authenticated' ? '設定をカスタマイズ済み' : '設定をカスタマイズ'}
+                    </span>
                   </div>
                 </div>
 
-                <Link
-                  href="/auth/signin"
+                <button
+                  onClick={handleLoginClick}
                   className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
                   <LogIn className="w-5 h-5 mr-2" />
-                  ログインして始める
-                </Link>
+                  {status === 'authenticated' ? '飲み会一覧を見る' : 'ログインして始める'}
+                </button>
               </div>
             </div>
           </section>
