@@ -228,35 +228,10 @@ export default function QuickEventPage() {
       return
     }
 
-    // 精算計算ロジック（簡略版）
-    const totalAmount = event.venues.reduce((sum, venue) => {
-      const amount = typeof venue.totalAmount === 'string' ? parseInt(venue.totalAmount) || 0 : venue.totalAmount
-      return sum + amount
-    }, 0)
-    const participants = event.participants.map(p => {
-      const multiplier = 
-        rules.genderMultiplier[p.gender] * 
-        rules.roleMultiplier[p.role] * 
-        (p.stayRange.firstParty + p.stayRange.secondParty + p.stayRange.thirdParty) / 3
-      
-      return {
-        ...p,
-        multiplier,
-        amount: Math.round((totalAmount / event.participants.reduce((sum, p2) => {
-          const m2 = rules.genderMultiplier[p2.gender] * 
-                    rules.roleMultiplier[p2.role] * 
-                    (p2.stayRange.firstParty + p2.stayRange.secondParty + p2.stayRange.thirdParty) / 3
-          return sum + m2
-        }, 0)) * multiplier)
-      }
-    })
-
-    setCalculationResult({
-      event,
-      participants,
-      totalAmount,
-      rules
-    })
+    // 共通の精算計算関数を使用
+    const result = calculateQuickSettlement(event.participants, event.venues, rules)
+    
+    setCalculationResult(result)
     setCurrentStep('calculation')
   }
 

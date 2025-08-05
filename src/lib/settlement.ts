@@ -37,6 +37,70 @@ function parseStayRange(stayRange: any) {
 }
 
 /**
+ * クイック精算用の簡略版計算関数
+ */
+export function calculateQuickSettlement(
+  participants: Array<{
+    id: string
+    nickname: string
+    gender: 'male' | 'female' | 'unspecified'
+    role: 'senior' | 'junior' | 'flat'
+    stayRange: {
+      firstParty: number
+      secondParty: number
+      thirdParty: number
+    }
+  }>,
+  venues: Array<{
+    id: string
+    totalAmount: number | string
+  }>,
+  rules: SettlementRules
+): any {
+  console.log('⚡ [calculateQuickSettlement] クイック精算計算開始')
+  console.log('📊 [calculateQuickSettlement] 使用する設定:', rules)
+  console.log('👥 [calculateQuickSettlement] 参加者数:', participants.length)
+  console.log('🏪 [calculateQuickSettlement] お店数:', venues.length)
+
+  const totalAmount = venues.reduce((sum, venue) => {
+    const amount = typeof venue.totalAmount === 'string' ? parseInt(venue.totalAmount) || 0 : venue.totalAmount
+    return sum + amount
+  }, 0)
+
+  const calculatedParticipants = participants.map(p => {
+    const genderMultiplier = rules.genderMultiplier[p.gender] || 1.0
+    const roleMultiplier = rules.roleMultiplier[p.role] || 1.0
+    const multiplier = 
+      genderMultiplier * 
+      roleMultiplier * 
+      (p.stayRange.firstParty + p.stayRange.secondParty + p.stayRange.thirdParty) / 3
+    
+    return {
+      ...p,
+      multiplier,
+      amount: Math.round((totalAmount / participants.reduce((sum, p2) => {
+        const p2GenderMultiplier = rules.genderMultiplier[p2.gender] || 1.0
+        const p2RoleMultiplier = rules.roleMultiplier[p2.role] || 1.0
+        const m2 = p2GenderMultiplier * 
+                  p2RoleMultiplier * 
+                  (p2.stayRange.firstParty + p2.stayRange.secondParty + p2.stayRange.thirdParty) / 3
+        return sum + m2
+      }, 0)) * multiplier)
+    }
+  })
+
+  console.log('✅ [calculateQuickSettlement] クイック精算計算完了')
+  console.log('💰 [calculateQuickSettlement] 総額:', totalAmount)
+  console.log('👥 [calculateQuickSettlement] 参加者別金額:', calculatedParticipants.map(p => `${p.nickname}: ¥${p.amount}`))
+
+  return {
+    participants: calculatedParticipants,
+    totalAmount,
+    rules
+  }
+}
+
+/**
  * 参加者の各会での支払い義務金額を計算
  */
 export function calculateSettlements(event: Event, config?: SettlementRules): SettlementCalculation[] {
