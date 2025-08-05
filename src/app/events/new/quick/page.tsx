@@ -23,7 +23,7 @@ interface QuickVenue {
   venueOrder: number
   name: string
   googleMapsUrl?: string
-  totalAmount: number
+  totalAmount: number | string // 0から空文字に変更
   paidBy: string
 }
 
@@ -121,7 +121,7 @@ export default function QuickEventPage() {
       id: Date.now().toString(),
       venueOrder: event.venues.length + 1,
       name: '',
-      totalAmount: 0,
+      totalAmount: '', // 0から空文字に変更
       paidBy: ''
     }
     setEvent(prev => ({
@@ -153,7 +153,10 @@ export default function QuickEventPage() {
     }
 
     // 精算計算ロジック（簡略版）
-    const totalAmount = event.venues.reduce((sum, venue) => sum + venue.totalAmount, 0)
+    const totalAmount = event.venues.reduce((sum, venue) => {
+      const amount = typeof venue.totalAmount === 'string' ? parseInt(venue.totalAmount) || 0 : venue.totalAmount
+      return sum + amount
+    }, 0)
     const participants = event.participants.map(p => {
       const multiplier = 
         rules.genderMultiplier[p.gender] * 
@@ -527,10 +530,13 @@ KAISEI - 飲み会精算支援アプリ
                     </label>
                     <input
                       type="number"
-                      value={venue.totalAmount}
-                      onChange={(e) => updateVenue(venue.id, 'totalAmount', parseInt(e.target.value) || 0)}
+                      value={venue.totalAmount === '' ? '' : venue.totalAmount}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        updateVenue(venue.id, 'totalAmount', value === '' ? '' : parseInt(value) || 0)
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0"
+                      placeholder="10000"
                     />
                   </div>
                   <div>
