@@ -120,17 +120,17 @@ export interface SettlementRules {
   }
 }
 
-// 統一されたデフォルト設定
+// 統一されたデフォルト設定（全員均等）
 export const DEFAULT_SETTLEMENT_RULES: SettlementRules = {
   genderMultiplier: {
-    male: 1.2,     // 男性は1.2倍
-    female: 0.8,   // 女性は0.8倍
-    unspecified: 1.0 // 未設定は1.0倍
+    male: 1.0,     // 男性は1.0倍（均等）
+    female: 1.0,   // 女性は1.0倍（均等）
+    unspecified: 1.0 // 未設定は1.0倍（均等）
   },
   roleMultiplier: {
-    senior: 1.3,   // 先輩は1.3倍
-    junior: 0.7,   // 後輩は0.7倍
-    flat: 1.0      // フラットは1.0倍
+    senior: 1.0,   // 先輩は1.0倍（均等）
+    junior: 1.0,   // 後輩は1.0倍（均等）
+    flat: 1.0      // フラットは1.0倍（均等）
   },
   stayRangeMultiplier: {
     first: 1.0,    // 1次会は1.0倍（基準）

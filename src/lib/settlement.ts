@@ -1,4 +1,4 @@
-import { Event, Participant, Venue, PaymentSummary, SettlementTransfer, SettlementCalculation, SettlementRules, DEFAULT_SETTLEMENT_RULES } from '@/types'
+import { DEFAULT_SETTLEMENT_RULES, Event, PaymentSummary, SettlementCalculation, SettlementRules, SettlementTransfer } from '@/types'
 
 // ローカルストレージから設定を取得する関数
 export function getSettlementConfig(): SettlementRules {
@@ -31,9 +31,25 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
   const { participants, venues } = event
   const settlementConfig = config || getSettlementConfig()
   
-  console.log('Calculating settlements with config:', settlementConfig)
+  console.log('💰 [calculateSettlements] 精算計算開始')
+  console.log('📊 [calculateSettlements] 使用する設定:', settlementConfig)
+  console.log('👥 [calculateSettlements] 参加者数:', participants.length)
+  console.log('🏪 [calculateSettlements] お店数:', venues.length)
   
   return participants.map(participant => {
+    console.log(`👤 [calculateSettlements] ${participant.nickname}さんの計算開始`)
+    console.log(`📝 [calculateSettlements] ${participant.nickname}さんの参加率:`, {
+      firstParty: participant.stayRange.firstParty,
+      secondParty: participant.stayRange.secondParty,
+      thirdParty: participant.stayRange.thirdParty
+    })
+    console.log(`🔢 [calculateSettlements] ${participant.nickname}さんの調整係数:`, {
+      gender: participant.gender,
+      genderMultiplier: settlementConfig.genderMultiplier[participant.gender],
+      role: participant.role,
+      roleMultiplier: settlementConfig.roleMultiplier[participant.role]
+    })
+    
     let totalAmount = 0
     const breakdown: SettlementCalculation['breakdown'] = []
 
@@ -47,9 +63,13 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
       else if (partyNumber === 3) stayRate = participant.stayRange.thirdParty
 
       if (stayRate === 0) {
-        // 参加していない場合はスキップ
+        console.log(`❌ [calculateSettlements] ${participant.nickname}さんは${partyNumber}次会に参加していません`)
         return
       }
+
+      console.log(`🏪 [calculateSettlements] ${participant.nickname}さんの${partyNumber}次会(${venue.name})の計算開始`)
+      console.log(`📊 [calculateSettlements] ${partyNumber}次会の総額: ¥${venue.totalAmount}`)
+      console.log(`📊 [calculateSettlements] ${participant.nickname}さんの参加率: ${stayRate}`)
 
       // 同じ会に参加している人数の合計参加率を計算
       const totalParticipationRate = participants.reduce((sum, p) => {
@@ -62,19 +82,25 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
           // 調整係数を適用
           const genderMultiplier = settlementConfig.genderMultiplier[p.gender] || 1.0
           const roleMultiplier = settlementConfig.roleMultiplier[p.role] || 1.0
-          return sum + (rate * genderMultiplier * roleMultiplier)
+          const adjustedRate = rate * genderMultiplier * roleMultiplier
+          console.log(`📊 [calculateSettlements] ${p.nickname}さんの調整後参加率: ${rate} × ${genderMultiplier} × ${roleMultiplier} = ${adjustedRate}`)
+          return sum + adjustedRate
         }
         return sum
       }, 0)
 
+      console.log(`📊 [calculateSettlements] ${partyNumber}次会の合計調整後参加率: ${totalParticipationRate}`)
+
       // 基本金額を計算（参加率による按分）
       const baseAmount = (venue.totalAmount * stayRate) / totalParticipationRate
+      console.log(`💰 [calculateSettlements] ${participant.nickname}さんの基本金額: (${venue.totalAmount} × ${stayRate}) ÷ ${totalParticipationRate} = ¥${baseAmount}`)
 
       // 調整係数を適用
       const genderMultiplier = settlementConfig.genderMultiplier[participant.gender] || 1.0
       const roleMultiplier = settlementConfig.roleMultiplier[participant.role] || 1.0
       
       const adjustedAmount = baseAmount * genderMultiplier * roleMultiplier
+      console.log(`💰 [calculateSettlements] ${participant.nickname}さんの調整後金額: ${baseAmount} × ${genderMultiplier} × ${roleMultiplier} = ¥${adjustedAmount}`)
 
       totalAmount += adjustedAmount
 
@@ -91,6 +117,8 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
       })
     })
 
+    console.log(`💰 [calculateSettlements] ${participant.nickname}さんの総負担額: ¥${Math.round(totalAmount)}`)
+    
     return {
       participantId: participant.id,
       nickname: participant.nickname,
@@ -106,18 +134,28 @@ export function calculateSettlements(event: Event, config?: SettlementRules): Se
 export function calculatePaymentSummary(event: Event, settlements: SettlementCalculation[]): PaymentSummary[] {
   const { participants, venues } = event
 
+  console.log('💰 [calculatePaymentSummary] 支払いサマリー計算開始')
+
   return participants.map(participant => {
     // 実際に支払った金額を計算
-    const totalPaid = venues
-      .filter(venue => venue.paidBy === participant.nickname)
-      .reduce((sum, venue) => sum + venue.totalAmount, 0)
+    const paidVenues = venues.filter(venue => venue.paidBy === participant.nickname)
+    const totalPaid = paidVenues.reduce((sum, venue) => sum + venue.totalAmount, 0)
+    
+    console.log(`💳 [calculatePaymentSummary] ${participant.nickname}さんの支払い状況:`)
+    console.log(`  - 支払ったお店:`, paidVenues.map(v => `${v.name} ¥${v.totalAmount}`))
+    console.log(`  - 総支払額: ¥${totalPaid}`)
 
     // 支払い義務のある金額を取得
     const settlement = settlements.find(s => s.participantId === participant.id)
     const totalOwed = settlement?.amount || 0
+    
+    console.log(`  - 負担義務額: ¥${totalOwed}`)
 
     // 差額を計算（正の値：お金をもらう、負の値：支払う）
     const balance = totalPaid - totalOwed
+    
+    console.log(`  - 差額: ¥${balance} ${balance >= 0 ? '(受け取り)' : '(支払い)'}`)
+    console.log(`  - 差額の詳細: 支払い¥${totalPaid} - 負担¥${totalOwed} = ¥${balance}`)
 
     return {
       participantId: participant.id,
@@ -135,9 +173,21 @@ export function calculatePaymentSummary(event: Event, settlements: SettlementCal
 export function calculateSettlementTransfers(paymentSummaries: PaymentSummary[]): SettlementTransfer[] {
   const transfers: SettlementTransfer[] = []
   
+  // 元のデータをコピーして作業用の配列を作成
+  const workingSummaries = paymentSummaries.map(summary => ({
+    ...summary,
+    balance: summary.balance // 元のbalanceを保持
+  }))
+  
+  console.log('🔄 [calculateSettlementTransfers] 精算取引計算開始')
+  console.log('📊 [calculateSettlementTransfers] 元の差額:', workingSummaries.map(s => `${s.nickname}: ¥${s.balance}`))
+  
   // 支払う人（balance < 0）と受け取る人（balance > 0）を分離
-  const debtors = paymentSummaries.filter(p => p.balance < 0).sort((a, b) => a.balance - b.balance)
-  const creditors = paymentSummaries.filter(p => p.balance > 0).sort((a, b) => b.balance - a.balance)
+  const debtors = workingSummaries.filter(p => p.balance < 0).sort((a, b) => a.balance - b.balance)
+  const creditors = workingSummaries.filter(p => p.balance > 0).sort((a, b) => b.balance - a.balance)
+
+  console.log('💸 [calculateSettlementTransfers] 債務者:', debtors.map(d => `${d.nickname}: ¥${d.balance}`))
+  console.log('💰 [calculateSettlementTransfers] 債権者:', creditors.map(c => `${c.nickname}: ¥${c.balance}`))
 
   // 債務者と債権者をマッチング
   let debtorIndex = 0
@@ -153,15 +203,19 @@ export function calculateSettlementTransfers(paymentSummaries: PaymentSummary[])
     const transferAmount = Math.min(debtAmount, creditAmount)
 
     if (transferAmount > 0) {
+      console.log(`🔄 [calculateSettlementTransfers] 精算取引: ${debtor.nickname} → ${creditor.nickname} ¥${transferAmount}`)
+      
       transfers.push({
         from: debtor.nickname,
         to: creditor.nickname,
         amount: transferAmount
       })
 
-      // 残高を更新
+      // 残高を更新（作業用配列のみ）
       debtor.balance += transferAmount
       creditor.balance -= transferAmount
+
+      console.log(`📊 [calculateSettlementTransfers] 更新後: ${debtor.nickname} ¥${debtor.balance}, ${creditor.nickname} ¥${creditor.balance}`)
 
       // 0になった方を次に進める
       if (Math.abs(debtor.balance) < 1) debtorIndex++
@@ -171,6 +225,9 @@ export function calculateSettlementTransfers(paymentSummaries: PaymentSummary[])
     }
   }
 
+  console.log('✅ [calculateSettlementTransfers] 精算取引計算完了')
+  console.log('📋 [calculateSettlementTransfers] 生成された取引:', transfers)
+
   return transfers
 }
 
@@ -178,10 +235,22 @@ export function calculateSettlementTransfers(paymentSummaries: PaymentSummary[])
  * 精算データの全体計算
  */
 export function calculateFullSettlement(event: Event, config?: SettlementRules) {
-  console.log('calculateFullSettlement called with config:', config)
+  console.log('🚀 [calculateFullSettlement] 全体精算計算開始')
+  console.log('📊 [calculateFullSettlement] 使用する設定:', config || 'デフォルト設定')
+  
   const settlements = calculateSettlements(event, config)
+  console.log('✅ [calculateFullSettlement] 精算計算完了')
+  
   const paymentSummaries = calculatePaymentSummary(event, settlements)
+  console.log('✅ [calculateFullSettlement] 支払いサマリー計算完了')
+  
   const transfers = calculateSettlementTransfers(paymentSummaries)
+  console.log('✅ [calculateFullSettlement] 精算取引計算完了')
+  
+  console.log('🎯 [calculateFullSettlement] 最終結果:')
+  paymentSummaries.forEach(summary => {
+    console.log(`  - ${summary.nickname}さん: 支払い¥${summary.totalPaid} / 負担¥${summary.totalOwed} / 差額¥${summary.balance}`)
+  })
 
   return {
     settlements,

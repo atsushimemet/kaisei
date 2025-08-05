@@ -834,41 +834,52 @@ export default function EventDetailPage() {
                       </div>
                     </div>
 
-                    {summary.balance > 0 && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                        <div className="flex items-center text-yellow-800">
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          <span className="font-medium">精算が必要です</span>
-                        </div>
-                                                 <div className="mt-2 text-sm text-yellow-700">
-                           {summary.nickname}さんは他の参加者から精算を受け取る必要があります。
-                         </div>
-                       </div>
-                     )}
-
-                     {summary.balance < 0 && (
-                       <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                         <div className="flex items-center text-red-800">
-                           <MessageSquare className="w-4 h-4 mr-2" />
-                           <span className="font-medium">精算が必要です</span>
-                         </div>
-                         <div className="mt-2 text-sm text-red-700">
-                           {summary.nickname}さんは他の参加者に精算を支払う必要があります。
-                         </div>
-                       </div>
-                     )}
-
-                     {summary.balance === 0 && (
-                       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                         <div className="flex items-center text-green-800">
-                           <MessageSquare className="w-4 h-4 mr-2" />
-                           <span className="font-medium">精算は不要です</span>
-                         </div>
-                         <div className="mt-2 text-sm text-green-700">
-                           {summary.nickname}さんの支払いと負担が一致しています。
-                         </div>
-                       </div>
-                     )}
+                    {(() => {
+                      console.log(`🎯 [表示] ${summary.nickname}さんの精算判定:`, {
+                        totalPaid: summary.totalPaid,
+                        totalOwed: summary.totalOwed,
+                        balance: summary.balance,
+                        balanceType: summary.balance > 0 ? '受け取り' : summary.balance < 0 ? '支払い' : '一致'
+                      })
+                      
+                      if (summary.balance > 0) {
+                        return (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div className="flex items-center text-yellow-800">
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              <span className="font-medium">精算が必要です</span>
+                            </div>
+                            <div className="mt-2 text-sm text-yellow-700">
+                              {summary.nickname}さんは他の参加者から精算を受け取る必要があります。
+                            </div>
+                          </div>
+                        )
+                      } else if (summary.balance < 0) {
+                        return (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div className="flex items-center text-red-800">
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              <span className="font-medium">精算が必要です</span>
+                            </div>
+                            <div className="mt-2 text-sm text-red-700">
+                              {summary.nickname}さんは他の参加者に精算を支払う必要があります。
+                            </div>
+                          </div>
+                        )
+                      } else {
+                        return (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div className="flex items-center text-green-800">
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              <span className="font-medium">精算は不要です</span>
+                            </div>
+                            <div className="mt-2 text-sm text-green-700">
+                              {summary.nickname}さんの支払いと負担が一致しています。
+                            </div>
+                          </div>
+                        )
+                      }
+                    })()}
                   </div>
                 ))}
               </div>

@@ -336,6 +336,60 @@ export default function NewEventPage() {
                   追加
                 </button>
               </div>
+              {/* 滞在時間設定 */}
+              <div className="bg-white p-3 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">滞在時間設定</h4>
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">1次会参加率</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="1"
+                      value={currentParticipant.stayRange.firstParty}
+                      onChange={(e) => setCurrentParticipant(prev => ({
+                        ...prev,
+                        stayRange: { ...prev.stayRange, firstParty: parseFloat(e.target.value) }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">2次会参加率</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="1"
+                      value={currentParticipant.stayRange.secondParty}
+                      onChange={(e) => setCurrentParticipant(prev => ({
+                        ...prev,
+                        stayRange: { ...prev.stayRange, secondParty: parseFloat(e.target.value) }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">3次会参加率</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="1"
+                      value={currentParticipant.stayRange.thirdParty}
+                      onChange={(e) => setCurrentParticipant(prev => ({
+                        ...prev,
+                        stayRange: { ...prev.stayRange, thirdParty: parseFloat(e.target.value) }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* 参加者一覧 */}
@@ -345,51 +399,105 @@ export default function NewEventPage() {
                   {editingParticipantIndex === index ? (
                     // 編集フォーム
                     <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
-                      <div className="grid md:grid-cols-4 gap-3 mb-3">
-                        <input
-                          type="text"
-                          value={editParticipantData?.nickname || ''}
-                          onChange={(e) => setEditParticipantData(prev => prev ? {...prev, nickname: e.target.value} : null)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="ニックネーム"
-                        />
-                        <select
-                          value={editParticipantData?.gender || 'unspecified'}
-                          onChange={(e) => setEditParticipantData(prev => prev ? {...prev, gender: e.target.value as any} : null)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="unspecified">性別未設定</option>
-                          <option value="male">男性</option>
-                          <option value="female">女性</option>
-                        </select>
-                        <select
-                          value={editParticipantData?.role || 'flat'}
-                          onChange={(e) => setEditParticipantData(prev => prev ? {...prev, role: e.target.value as any} : null)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="flat">フラット</option>
-                          <option value="senior">先輩</option>
-                          <option value="junior">後輩</option>
-                        </select>
-                        <div className="flex space-x-2">
-                          <button
-                            type="button"
-                            onClick={saveParticipant}
-                            className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                              <div className="grid md:grid-cols-4 gap-3 mb-3">
+                          <input
+                            type="text"
+                            value={editParticipantData?.nickname || ''}
+                            onChange={(e) => setEditParticipantData(prev => prev ? {...prev, nickname: e.target.value} : null)}
+                            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="ニックネーム"
+                          />
+                          <select
+                            value={editParticipantData?.gender || 'unspecified'}
+                            onChange={(e) => setEditParticipantData(prev => prev ? {...prev, gender: e.target.value as any} : null)}
+                            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <Save className="w-4 h-4 inline mr-1" />
-                            保存
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelEditParticipant}
-                            className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                            <option value="unspecified">性別未設定</option>
+                            <option value="male">男性</option>
+                            <option value="female">女性</option>
+                          </select>
+                          <select
+                            value={editParticipantData?.role || 'flat'}
+                            onChange={(e) => setEditParticipantData(prev => prev ? {...prev, role: e.target.value as any} : null)}
+                            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <X className="w-4 h-4 inline mr-1" />
-                            キャンセル
-                          </button>
+                            <option value="flat">フラット</option>
+                            <option value="senior">先輩</option>
+                            <option value="junior">後輩</option>
+                          </select>
+                          <div className="flex space-x-2">
+                            <button
+                              type="button"
+                              onClick={saveParticipant}
+                              className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                            >
+                              <Save className="w-4 h-4 inline mr-1" />
+                              保存
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEditParticipant}
+                              className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                            >
+                              <X className="w-4 h-4 inline mr-1" />
+                              キャンセル
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                        {/* 滞在時間設定 */}
+                        <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                          <h4 className="text-sm font-medium text-gray-900 mb-3">滞在時間設定</h4>
+                          <div className="grid md:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">1次会参加率</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="1"
+                                value={editParticipantData?.stayRange.firstParty || 0}
+                                onChange={(e) => setEditParticipantData(prev => prev ? {
+                                  ...prev,
+                                  stayRange: { ...prev.stayRange, firstParty: parseFloat(e.target.value) }
+                                } : null)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">2次会参加率</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="1"
+                                value={editParticipantData?.stayRange.secondParty || 0}
+                                onChange={(e) => setEditParticipantData(prev => prev ? {
+                                  ...prev,
+                                  stayRange: { ...prev.stayRange, secondParty: parseFloat(e.target.value) }
+                                } : null)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">3次会参加率</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="1"
+                                value={editParticipantData?.stayRange.thirdParty || 0}
+                                onChange={(e) => setEditParticipantData(prev => prev ? {
+                                  ...prev,
+                                  stayRange: { ...prev.stayRange, thirdParty: parseFloat(e.target.value) }
+                                } : null)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">1.0=全時間参加, 0.0=参加なし</p>
+                            </div>
+                          </div>
+                        </div>
                     </div>
                   ) : (
                     // 表示モード
@@ -416,6 +524,15 @@ export default function NewEventPage() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {participant.gender === 'male' ? '男性' : participant.gender === 'female' ? '女性' : '未設定'} / 
+                        {participant.role === 'senior' ? '先輩' : participant.role === 'junior' ? '後輩' : 'フラット'}
+                      </p>
+                      <div className="text-xs text-gray-400 mt-1">
+                        参加: {participant.stayRange.firstParty > 0 ? '1次会' : ''}
+                        {participant.stayRange.secondParty > 0 ? (participant.stayRange.firstParty > 0 ? ', 2次会' : '2次会') : ''}
+                        {participant.stayRange.thirdParty > 0 ? (participant.stayRange.firstParty > 0 || participant.stayRange.secondParty > 0 ? ', 3次会' : '3次会') : ''}
                       </div>
                     </div>
                   )}
