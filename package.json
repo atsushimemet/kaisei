@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "prisma db push --accept-data-loss && next start",
+    "start": "prisma generate && next start",
     "start:dev": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -15,7 +15,10 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "start:prod": "node server.js",
+    "render:build": "prisma generate && npm run build",
+    "render:start": "prisma generate && node server.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
