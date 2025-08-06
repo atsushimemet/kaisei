@@ -97,6 +97,33 @@ Google Cloud Consoleで：
 - Google OAuth設定が正しいか確認
 - リダイレクトURLが正しく登録されているか確認
 
+### スマートフォンブラウザでのログインループ問題
+**問題**: ログイン後に認証画面に戻ってしまう現象
+
+**原因**:
+- `NEXTAUTH_URL` が本番環境のURLに設定されていない
+- モバイルブラウザでのCookie設定の問題
+- Google OAuth設定の不備
+
+**解決策**:
+1. **環境変数の確認**:
+   - `NEXTAUTH_URL=https://kaisei.onrender.com` が正しく設定されているか確認
+   - `NEXTAUTH_SECRET` が長い安全な文字列に設定されているか確認
+
+2. **Google Cloud Console設定**:
+   - 承認済みリダイレクトURIに以下が登録されているか確認：
+     - `https://kaisei.onrender.com/api/auth/callback/google`
+   - 承認済みJavaScript生成元に以下が登録されているか確認：
+     - `https://kaisei.onrender.com`
+
+3. **ブラウザキャッシュとCookieのクリア**:
+   - ブラウザの設定からCookieとキャッシュをクリア
+   - プライベートブラウジングモードでテスト
+
+4. **デバッグ方法**:
+   - Render Dashboardでアプリケーションログを確認
+   - NextAuth debug モードは開発環境でのみ有効
+
 ## 本番環境での確認事項
 - [ ] アプリケーションが正常に起動する
 - [ ] データベース接続が成功する（自動マイグレーション）
