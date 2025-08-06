@@ -11,6 +11,8 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
+  // Render等のプロキシ環境でのHTTPS判定問題に対応
+  useSecureCookies: process.env.NEXTAUTH_URL?.startsWith('https://') ?? false,
   callbacks: {
     session: async ({ session, token }) => {
       if (session?.user && token?.sub) {
@@ -38,7 +40,11 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NEXTAUTH_URL?.startsWith('https://') ?? false,
+        // プロキシ環境での動作を確実にする
+        domain: process.env.NODE_ENV === 'production' 
+          ? process.env.NEXTAUTH_DOMAIN || undefined
+          : undefined,
       }
     },
     callbackUrl: {
@@ -48,7 +54,10 @@ export const authOptions: NextAuthOptions = {
       options: {
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NEXTAUTH_URL?.startsWith('https://') ?? false,
+        domain: process.env.NODE_ENV === 'production' 
+          ? process.env.NEXTAUTH_DOMAIN || undefined
+          : undefined,
       }
     },
     csrfToken: {
@@ -59,7 +68,8 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NEXTAUTH_URL?.startsWith('https://') ?? false,
+        // __Host- prefixではdomain設定は不可
       }
     },
   },
