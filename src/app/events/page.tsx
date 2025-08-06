@@ -76,7 +76,10 @@ export default function EventsListPage() {
     setShowDeleteConfirm(null)
   }
 
-  const formatDate = (dateInput: string | Date) => {
+  const formatDate = (dateInput: string | Date | undefined | null) => {
+    if (!dateInput) {
+      return '日付未設定'
+    }
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
     return date.toLocaleDateString('ja-JP', {
       year: 'numeric',
