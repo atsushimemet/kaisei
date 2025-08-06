@@ -14,7 +14,7 @@ Renderでのデプロイ時に発生しているデータベース接続問題�
 ### ログから読み取れる情報
 ```
 ✅ DATABASE_URL is set
-📊 Database URL: postgresql://neondb_owner:npg_dbSeW2qU5yKg@ep-wandering-cloud-a1irqgl7-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=requir...
+📊 Database URL: [DATABASE_URL]...
 ⏳ Waiting for database to be ready... (attempt 1/30)
 ⏳ Waiting for database to be ready... (attempt 2/30)
 ...
@@ -77,12 +77,12 @@ npx prisma db pull --force
 
 **現在の接続文字列**:
 ```
-postgresql://neondb_owner:npg_dbSeW2qU5yKg@ep-wandering-cloud-a1irqgl7-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+postgresql://[username]:[password]@[host]/[database]?sslmode=require&channel_binding=require
 ```
 
 **推奨する接続文字列**:
 ```
-postgresql://neondb_owner:npg_dbSeW2qU5yKg@ep-wandering-cloud-a1irqgl7-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+postgresql://[username]:[password]@[host]/[database]?sslmode=require
 ```
 
 ### 3. 接続確認のタイミング調整
@@ -107,7 +107,7 @@ echo "🚀 Starting Kaisei application..."
 echo "🔍 Checking environment variables..."
 if [ -n "$DATABASE_URL" ]; then
   echo "✅ DATABASE_URL is set"
-  echo "📊 Database URL: ${DATABASE_URL%?*}..."
+  echo "📊 Database URL: [DATABASE_URL]..."
 else
   echo "❌ DATABASE_URL is not set"
   exit 1
@@ -160,7 +160,7 @@ exec node server.js
 
 Renderの環境変数で以下を設定：
 ```
-DATABASE_URL=postgresql://neondb_owner:npg_dbSeW2qU5yKg@ep-wandering-cloud-a1irqgl7-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql://[username]:[password]@[host]/[database]?sslmode=require
 ```
 
 ## 📊 トラブルシューティング手順
@@ -168,19 +168,19 @@ DATABASE_URL=postgresql://neondb_owner:npg_dbSeW2qU5yKg@ep-wandering-cloud-a1irq
 ### 1. 接続テスト
 ```bash
 # ローカルで接続テスト
-psql "postgresql://neondb_owner:npg_dbSeW2qU5yKg@ep-wandering-cloud-a1irqgl7-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+psql "[DATABASE_URL]"
 ```
 
 ### 2. ネットワーク接続確認
 ```bash
 # Renderコンテナ内で実行
-telnet ep-wandering-cloud-a1irqgl7-pooler.ap-southeast-1.aws.neon.tech 5432
+telnet [host] 5432
 ```
 
 ### 3. SSL接続確認
 ```bash
 # SSL接続の詳細確認
-openssl s_client -connect ep-wandering-cloud-a1irqgl7-pooler.ap-southeast-1.aws.neon.tech:5432
+openssl s_client -connect [host]:5432
 ```
 
 ## 🎯 次のステップ
