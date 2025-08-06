@@ -127,8 +127,11 @@ export default function EventDetailPage() {
     })
   }
 
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString()
+  const formatCurrency = (amount: number | undefined | null) => {
+    if (amount === undefined || amount === null || isNaN(Number(amount))) {
+      return '0'
+    }
+    return Number(amount).toLocaleString()
   }
 
   const toggleAccordion = (key: string) => {

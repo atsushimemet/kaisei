@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,125 +7,99 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth.js Models
-model Account {
-  id                String  @id @default(cuid())
-  userId            String  @map("user_id")
-  type              String
-  provider          String
-  providerAccountId String  @map("provider_account_id")
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+model accounts {
+  id                  String  @id
+  user_id             String
+  type                String
+  provider            String
+  provider_account_id String
+  refresh_token       String?
+  access_token        String?
+  expires_at          Int?
+  token_type          String?
+  scope               String?
+  id_token            String?
+  session_state       String?
+  users               users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
+  @@unique([provider, provider_account_id])
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique @map("session_token")
-  userId       String   @map("user_id")
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
+model events {
+  id           Int            @id @default(autoincrement())
+  title        String
+  event_date   DateTime
+  user_id      String?
+  created_at   DateTime       @default(now())
+  updated_at   DateTime
+  users        users?         @relation(fields: [user_id], references: [id])
+  participants participants[]
+  settlements  settlements[]
+  venues       venues[]
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  
-  accounts Account[]
-  sessions Session[]
-  events   Event[]
-
-  @@map("users")
+model participants {
+  id          Int           @id @default(autoincrement())
+  event_id    Int
+  nickname    String
+  gender      String?
+  role        String?
+  stay_range  String
+  created_at  DateTime      @default(now())
+  events      events        @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  settlements settlements[]
 }
 
-model VerificationToken {
+model sessions {
+  id            String   @id
+  session_token String   @unique
+  user_id       String
+  expires       DateTime
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model settlements {
+  id             Int          @id @default(autoincrement())
+  event_id       Int
+  participant_id Int
+  amount         Int
+  payment_method String?
+  status         String       @default("PENDING")
+  created_at     DateTime     @default(now())
+  updated_at     DateTime
+  events         events       @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  participants   participants @relation(fields: [participant_id], references: [id], onDelete: Cascade)
+}
+
+model users {
+  id             String     @id
+  name           String?
+  email          String?    @unique
+  email_verified DateTime?
+  image          String?
+  created_at     DateTime   @default(now())
+  updated_at     DateTime
+  accounts       accounts[]
+  events         events[]
+  sessions       sessions[]
+}
+
+model venues {
+  id              Int      @id @default(autoincrement())
+  event_id        Int
+  venue_order     Int
+  name            String
+  google_maps_url String?
+  total_amount    Int
+  paid_by         String
+  created_at      DateTime @default(now())
+  events          events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
+}
+
+model verificationtokens {
   identifier String
   token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verificationtokens")
 }
-
-model Event {
-  id          Int           @id @default(autoincrement())
-  title       String
-  eventDate   DateTime      @map("event_date")
-  userId      String?       @map("user_id")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  participants Participant[]
-  venues       Venue[]
-  settlements  Settlement[]
-
-  @@map("events")
-}
-
-model Participant {
-  id         Int      @id @default(autoincrement())
-  eventId    Int      @map("event_id")
-  nickname   String
-  gender     String?
-  role       String?
-  stayRange  String   @map("stay_range") // JSON as string for SQLite
-  createdAt  DateTime @default(now()) @map("created_at")
-  
-  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  settlements Settlement[]
-
-  @@map("participants")
-}
-
-model Venue {
-  id            Int      @id @default(autoincrement())
-  eventId       Int      @map("event_id")
-  venueOrder    Int      @map("venue_order")
-  name          String
-  googleMapsUrl String?  @map("google_maps_url")
-  totalAmount   Int      @map("total_amount")
-  paidBy        String   @map("paid_by")
-  createdAt     DateTime @default(now()) @map("created_at")
-  
-  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  @@map("venues")
-}
-
-model Settlement {
-  id             Int           @id @default(autoincrement())
-  eventId        Int           @map("event_id")
-  participantId  Int           @map("participant_id")
-  amount         Int
-  paymentMethod  String?       @map("payment_method")
-  status         String        @default("PENDING") // PENDING, PAID, CANCELLED
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  
-  event          Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  participant    Participant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
-
-  @@map("settlements")
-}
-
-// Enums converted to strings for SQLite compatibility
-// Gender: 'male', 'female', 'unspecified'
-// Role: 'senior', 'junior', 'flat' 
-// SettlementStatus: 'PENDING', 'PAID', 'CANCELLED' 
