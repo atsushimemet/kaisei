@@ -1,10 +1,11 @@
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    // データベース接続をテスト
-    await prisma.$queryRaw`SELECT 1`
+    // データベース接続をテスト（より安全な方法）
+    const prisma = getPrisma()
+    await prisma.$queryRaw`SELECT 1 as test`
     
     return NextResponse.json(
       { 

@@ -9,11 +9,6 @@ let prisma: PrismaClient
 if (process.env.NODE_ENV === 'production') {
   prisma = new PrismaClient({
     log: ['error'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
   })
 } else {
   if (!global.__prisma) {
@@ -24,4 +19,12 @@ if (process.env.NODE_ENV === 'production') {
   prisma = global.__prisma
 }
 
-export { prisma }
+// ビルド時はPrismaClientを初期化しない
+const getPrisma = () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is not set')
+  }
+  return prisma
+}
+
+export { getPrisma, prisma }
