@@ -31,7 +31,7 @@ max_attempts=30
 attempt=0
 
 while [ $attempt -lt $max_attempts ]; do
-  if npx prisma db execute --stdin <<< "SELECT 1;" >/dev/null 2>&1; then
+  if npx prisma db push --accept-data-loss --skip-generate >/dev/null 2>&1; then
     echo "✅ Database connection confirmed"
     break
   else
