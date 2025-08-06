@@ -50,14 +50,15 @@ RUN chmod +x /app/start.sh
 # Prismaバイナリへのパスを追加
 ENV PATH="/app/node_modules/.bin:$PATH"
 
-EXPOSE 3000
+EXPOSE 10000
 
-ENV PORT=3000
+# PORTはRender Environmentで設定される（デフォルト: 10000）
+# ENV PORT=3000  # この行を削除してRender設定を優先
 ENV HOSTNAME=0.0.0.0
 
-# ヘルスチェックを追加
+# ヘルスチェックを追加（環境変数PORTを使用）
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-10000}/api/health || exit 1
 
 # スタートアップスクリプトを実行
 CMD ["/app/start.sh"]

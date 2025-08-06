@@ -73,5 +73,5 @@ fi
 
 # Next.jsアプリケーション起動
 echo "🌟 Starting Next.js application..."
-echo "🌐 Application will be available on port 3000"
+echo "🌐 Application will be available on port ${PORT:-10000}"
 exec node server.js

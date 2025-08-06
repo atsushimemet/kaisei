@@ -11,14 +11,14 @@
 
 ### 根本原因
 
-#### 1. Neonデータベース接続パラメータの問題（主要原因）
-**根本的な問題**: DATABASE_URLに含まれる`channel_binding=require`パラメータがPrismaとの互換性問題を引き起こしていた
+#### 1. ポート設定の不整合（真の根本原因）
+**根本的な問題**: DockerfileのPORT設定とRender EnvironmentのPORT設定が競合していた
 
-- Neonが提供する接続文字列：`postgresql://user:pass@host/db?sslmode=require&channel_binding=require`
-- Prismaは`channel_binding=require`パラメータに対応していない
-- ログで`channel_binding=requir...`が確認されている（URLが途中で切られている）
-- Neonのドキュメントによると、このパラメータは特定の状況でのみ必要
-- Prismaは直接データベース接続を必要とし、プールされた接続を完全にサポートしていない
+- Render Environment: `PORT=10000`
+- Dockerfile: `ENV PORT=3000` ← これが環境変数を上書き
+- 結果: アプリはポート3000で起動、Renderはポート10000での応答を期待
+- ヘルスチェック(`/api/health`)がポート10000に送信されるが応答なし
+- `==> No open ports detected` エラーが発生
 
 #### 2. データベース接続のブロッキング
 - `start.sh`スクリプトで30回（60秒間）のデータベース接続試行
