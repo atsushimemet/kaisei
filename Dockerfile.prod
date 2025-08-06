@@ -42,8 +42,8 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
-# スタートアップスクリプトをコピー
-COPY scripts/start.sh /app/start.sh
+# シンプルなスタートアップスクリプトをコピー
+COPY scripts/start-simple.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Prismaバイナリへのパスを追加

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "🚀 Starting Kaisei (Production Mode)..."
+echo "🚀 Starting Kaisei (Production Fast Mode)..."
 
 # Prisma Client生成のみ
 echo "🔧 Generating Prisma Client..."

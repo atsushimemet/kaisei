@@ -18,7 +18,8 @@
     "db:generate": "prisma generate",
     "start:prod": "node server.js",
     "render:build": "prisma generate && npm run build",
-    "render:start": "prisma generate && node server.js"
+    "render:start": "prisma generate && node server.js",
+    "render:start-simple": "npx prisma generate && npm start"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
