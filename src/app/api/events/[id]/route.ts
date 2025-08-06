@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth'
@@ -17,7 +17,8 @@ export async function GET(
       )
     }
 
-    const event = await prisma.event.findUnique({
+    const prisma = getPrisma()
+    const event = await prisma.events.findUnique({
       where: {
         id: parseInt(params.id),
       },
@@ -25,12 +26,12 @@ export async function GET(
         participants: true,
         venues: {
           orderBy: {
-            venueOrder: 'asc',
+            venue_order: 'asc',
           },
         },
         settlements: {
           include: {
-            participant: true,
+            participants: true, // 正しいリレーション名
           },
         },
       },
@@ -44,14 +45,42 @@ export async function GET(
     }
 
     // イベントがログインユーザーのものかチェック
-    if (event.userId !== session.user.id) {
+    if (event.user_id !== session.user.id) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
       )
     }
 
-    return NextResponse.json(event)
+    // データベースのsnake_caseをフロントエンド用のcamelCaseに変換
+    const eventWithParsedData = {
+      ...event,
+      participants: event.participants.map(participant => {
+        let parsedStayRange: any;
+        try {
+          parsedStayRange = JSON.parse(participant.stay_range) as any;
+        } catch {
+          parsedStayRange = {
+            firstParty: 1,
+            secondParty: 1,
+            thirdParty: 1
+          };
+        }
+        return {
+          ...participant,
+          stayRange: parsedStayRange // フロントエンド用にcamelCaseで返す
+        };
+      }),
+      venues: event.venues.map(venue => ({
+        ...venue,
+        venueOrder: venue.venue_order, // snake_case -> camelCase
+        googleMapsUrl: venue.google_maps_url, // snake_case -> camelCase
+        totalAmount: venue.total_amount, // snake_case -> camelCase
+        paidBy: venue.paid_by // snake_case -> camelCase
+      }))
+    };
+
+    return NextResponse.json(eventWithParsedData)
   } catch (error) {
     console.error('Error fetching event:', error)
     return NextResponse.json(
@@ -76,9 +105,10 @@ export async function DELETE(
     }
 
     const eventId = parseInt(params.id)
+    const prisma = getPrisma()
     
     // イベントが存在し、ログインユーザーのものかチェック
-    const existingEvent = await prisma.event.findUnique({
+    const existingEvent = await prisma.events.findUnique({
       where: { id: eventId }
     })
 
@@ -90,7 +120,7 @@ export async function DELETE(
     }
 
     // イベントがログインユーザーのものかチェック
-    if (existingEvent.userId !== session.user.id) {
+    if (existingEvent.user_id !== session.user.id) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -98,7 +128,7 @@ export async function DELETE(
     }
 
     // イベントと関連データを削除（CASCADE設定により自動的に削除される）
-    await prisma.event.delete({
+    await prisma.events.delete({
       where: { id: eventId }
     })
 

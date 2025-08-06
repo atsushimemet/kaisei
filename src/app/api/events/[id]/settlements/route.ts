@@ -1,5 +1,5 @@
 import { calculateFullSettlement } from '@/lib/settlement'
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
@@ -20,7 +20,8 @@ export async function GET(
       }
     }
 
-    const event = await prisma.event.findUnique({
+    const prisma = getPrisma()
+    const event = await prisma.events.findUnique({
       where: {
         id: parseInt(params.id),
       },
@@ -28,12 +29,12 @@ export async function GET(
         participants: true,
         venues: {
           orderBy: {
-            venueOrder: 'asc',
+            venue_order: 'asc',
           },
         },
         settlements: {
           include: {
-            participant: true,
+            participants: true,
           },
         },
       },
@@ -67,7 +68,8 @@ export async function POST(
     const body = await request.json()
     const { config } = body
 
-    const event = await prisma.event.findUnique({
+    const prisma = getPrisma()
+    const event = await prisma.events.findUnique({
       where: {
         id: parseInt(params.id),
       },
@@ -75,7 +77,7 @@ export async function POST(
         participants: true,
         venues: {
           orderBy: {
-            venueOrder: 'asc',
+            venue_order: 'asc',
           },
         },
       },
@@ -92,21 +94,23 @@ export async function POST(
     const settlementData = calculateFullSettlement(event as any, config)
 
     // 精算結果をデータベースに保存（既存の精算データを削除してから新規作成）
-    await prisma.settlement.deleteMany({
-      where: { eventId: event.id },
+    await prisma.settlements.deleteMany({
+      where: { event_id: event.id },
     })
 
     const dbSettlements = await Promise.all(
       settlementData.settlements.map(async (calculation) => {
-        return await prisma.settlement.create({
+        return await prisma.settlements.create({
           data: {
-            eventId: event.id,
-            participantId: calculation.participantId,
+            event_id: event.id,
+            participant_id: calculation.participantId,
             amount: calculation.amount,
             status: 'PENDING',
+            created_at: new Date(),
+            updated_at: new Date(),
           },
           include: {
-            participant: true,
+            participants: true,
           },
         })
       })

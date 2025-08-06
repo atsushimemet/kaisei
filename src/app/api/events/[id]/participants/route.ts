@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(
@@ -10,13 +10,15 @@ export async function POST(
     const { nickname, gender, role, stayRange } = body
     const eventId = parseInt(params.id)
 
-    const participant = await prisma.participant.create({
+    const prisma = getPrisma()
+    const participant = await prisma.participants.create({
       data: {
-        eventId,
+        event_id: eventId,
         nickname,
         gender,
         role,
-        stayRange,
+        stay_range: JSON.stringify(stayRange),
+        created_at: new Date(),
       },
     })
 

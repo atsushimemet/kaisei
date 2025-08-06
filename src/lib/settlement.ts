@@ -26,14 +26,31 @@ export function getSettlementConfig(): SettlementRules {
 
 // stayRangeを安全にパースする関数
 function parseStayRange(stayRange: any) {
+  // null、undefined、空文字の場合はデフォルト値を返す
+  if (!stayRange) {
+    return { firstParty: 1, secondParty: 1, thirdParty: 1 }
+  }
+  
   if (typeof stayRange === 'string') {
     try {
-      return JSON.parse(stayRange)
+      const parsed = JSON.parse(stayRange)
+      // パース結果がnullやundefinedでないことを確認
+      if (!parsed || typeof parsed !== 'object') {
+        return { firstParty: 1, secondParty: 1, thirdParty: 1 }
+      }
+      return parsed
     } catch {
       return { firstParty: 1, secondParty: 1, thirdParty: 1 }
     }
   }
-  return stayRange
+  
+  // オブジェクトの場合もundefinedでないことを確認
+  if (typeof stayRange === 'object' && stayRange !== null) {
+    return stayRange
+  }
+  
+  // その他の場合はデフォルト値
+  return { firstParty: 1, secondParty: 1, thirdParty: 1 }
 }
 
 /**

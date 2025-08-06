@@ -51,9 +51,9 @@ export async function PUT(
     }
 
     // 会場がログインユーザーのイベントに属しているかチェック
-    const venue = await prisma.venue.findUnique({
+    const venue = await prisma.venues.findUnique({
       where: { id: venueId },
-      include: { event: true }
+      include: { events: true }
     })
 
     if (!venue) {
@@ -63,7 +63,7 @@ export async function PUT(
       )
     }
 
-    if (venue.event.userId !== session.user.id) {
+    if (venue.events.user_id !== session.user.id) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -72,17 +72,17 @@ export async function PUT(
 
     const updateData: any = {
       name: name.trim(),
-      googleMapsUrl: googleMapsUrl?.trim() || null,
-      totalAmount: parseInt(totalAmount),
-      paidBy: paidBy.trim(),
+      google_maps_url: googleMapsUrl?.trim() || null,
+      total_amount: parseInt(totalAmount),
+      paid_by: paidBy.trim(),
     }
 
     // venueOrderが提供されている場合は追加
     if (venueOrder !== undefined) {
-      updateData.venueOrder = parseInt(venueOrder)
+      updateData.venue_order = parseInt(venueOrder)
     }
 
-    const updatedVenue = await prisma.venue.update({
+    const updatedVenue = await prisma.venues.update({
       where: {
         id: venueId,
       },
@@ -126,9 +126,9 @@ export async function DELETE(
     console.log('🔍 [DELETE /venues] 削除対象venueId:', venueId)
 
     // 削除するvenueの情報を取得
-    const venueToDelete = await prisma.venue.findUnique({
+    const venueToDelete = await prisma.venues.findUnique({
       where: { id: venueId },
-      include: { event: true }
+      include: { events: true }
     })
 
     if (!venueToDelete) {
@@ -140,7 +140,7 @@ export async function DELETE(
     }
 
     // 会場がログインユーザーのイベントに属しているかチェック
-    if (venueToDelete.event.userId !== session.user.id) {
+    if (venueToDelete.events.user_id !== session.user.id) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -150,17 +150,17 @@ export async function DELETE(
     console.log('📊 [DELETE /venues] 削除対象venue:', venueToDelete)
 
     // venueを削除
-    await prisma.venue.delete({
+    await prisma.venues.delete({
       where: { id: venueId },
     })
 
     console.log('✅ [DELETE /venues] venue削除完了')
 
     // 同じイベントの残りのvenueのvenueOrderを再整理
-    const remainingVenues = await prisma.venue.findMany({
-      where: { eventId: venueToDelete.eventId },
-      orderBy: { venueOrder: 'asc' },
-      select: { id: true, venueOrder: true }
+    const remainingVenues = await prisma.venues.findMany({
+      where: { event_id: venueToDelete.event_id },
+      orderBy: { venue_order: 'asc' },
+      select: { id: true, venue_order: true }
     })
 
     console.log('📊 [DELETE /venues] 削除後の残りvenue:', remainingVenues)
@@ -168,11 +168,11 @@ export async function DELETE(
     // venueOrderを1から連番で再割り当て
     for (let i = 0; i < remainingVenues.length; i++) {
       const venue = remainingVenues[i]
-      if (venue.venueOrder !== i + 1) {
-        console.log('🔄 [DELETE /venues] venueOrder更新:', { id: venue.id, oldOrder: venue.venueOrder, newOrder: i + 1 })
-        await prisma.venue.update({
+      if (venue.venue_order !== i + 1) {
+        console.log('🔄 [DELETE /venues] venueOrder更新:', { id: venue.id, oldOrder: venue.venue_order, newOrder: i + 1 })
+        await prisma.venues.update({
           where: { id: venue.id },
-          data: { venueOrder: i + 1 }
+          data: { venue_order: i + 1 }
         })
       }
     }

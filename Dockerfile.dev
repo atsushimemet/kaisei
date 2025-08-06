@@ -2,8 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# OpenSSLとその他の必要なパッケージをインストール
-RUN apk add --no-cache openssl
+# OpenSSLとPostgreSQLクライアントのみをインストール
+RUN apk add --no-cache openssl postgresql-client
 
 # パッケージファイルをコピー
 COPY package*.json ./
@@ -17,7 +17,10 @@ RUN npm ci
 # ソースコードをコピー
 COPY . .
 
+# 開発用スタートアップスクリプトに実行権限を付与
+RUN chmod +x /app/scripts/start-dev.sh
+
 # 開発サーバーを起動
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"] 
+CMD ["sh", "/app/scripts/start-dev.sh"]

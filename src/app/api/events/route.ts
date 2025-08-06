@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth'
@@ -18,26 +18,31 @@ export async function POST(request: NextRequest) {
     const { title, eventDate, participants, venues } = body
 
     // 飲み会を作成（ユーザーIDを設定）
-    const event = await prisma.event.create({
+    const prisma = getPrisma()
+    const event = await prisma.events.create({
       data: {
         title,
-        eventDate: new Date(eventDate),
-        userId: session.user.id, // ユーザーIDを設定
+        event_date: new Date(eventDate),
+        user_id: session.user.id, // ユーザーIDを設定（snake_case）
+        created_at: new Date(),
+        updated_at: new Date(),
         participants: {
           create: participants.map((participant: any) => ({
             nickname: participant.nickname,
             gender: participant.gender,
             role: participant.role,
-            stayRange: JSON.stringify(participant.stayRange), // ObjectをJSON文字列に変換
+            stay_range: JSON.stringify(participant.stayRange), // ObjectをJSON文字列に変換（snake_case）
+            created_at: new Date(),
           })),
         },
         venues: {
           create: venues.map((venue: any) => ({
-            venueOrder: venue.venueOrder,
+            venue_order: venue.venueOrder, // snake_case
             name: venue.name,
-            googleMapsUrl: venue.googleMapsUrl,
-            totalAmount: venue.totalAmount,
-            paidBy: venue.paidBy,
+            google_maps_url: venue.googleMapsUrl, // snake_case
+            total_amount: venue.totalAmount, // snake_case
+            paid_by: venue.paidBy, // snake_case
+            created_at: new Date(),
           })),
         },
       },
@@ -68,10 +73,11 @@ export async function GET() {
       )
     }
 
-    // ログインユーザーのイベントのみを取得
-    const events = await prisma.event.findMany({
+    // ログインユーザーのイベントのみを取得  
+    const prisma = getPrisma()
+    const events = await prisma.events.findMany({
       where: {
-        userId: session.user.id, // ユーザーIDでフィルタリング
+        user_id: session.user.id, // ユーザーIDでフィルタリング（snake_case）
       },
       include: {
         participants: true,
@@ -79,17 +85,17 @@ export async function GET() {
         settlements: true,
       },
       orderBy: {
-        eventDate: 'desc',
+        event_date: 'desc',
       },
     })
 
-    // stayRangeをJSONオブジェクトに変換して返す
-    const eventsWithParsedStayRange = events.map(event => ({
+    // データベースのsnake_caseをフロントエンド用のcamelCaseに変換
+    const eventsWithParsedData = events.map(event => ({
       ...event,
       participants: event.participants.map(participant => {
         let parsedStayRange: any;
         try {
-          parsedStayRange = JSON.parse(participant.stayRange) as any;
+          parsedStayRange = JSON.parse(participant.stay_range) as any;
         } catch {
           parsedStayRange = {
             firstParty: 1,
@@ -102,10 +108,17 @@ export async function GET() {
           ...participant,
           stayRange: parsedStayRange
         };
-      })
+      }),
+      venues: event.venues.map(venue => ({
+        ...venue,
+        venueOrder: venue.venue_order, // snake_case -> camelCase
+        googleMapsUrl: venue.google_maps_url, // snake_case -> camelCase  
+        totalAmount: venue.total_amount, // snake_case -> camelCase
+        paidBy: venue.paid_by // snake_case -> camelCase
+      }))
     }))
 
-    return NextResponse.json(eventsWithParsedStayRange)
+    return NextResponse.json(eventsWithParsedData)
   } catch (error) {
     console.error('Error fetching events:', error)
     return NextResponse.json(

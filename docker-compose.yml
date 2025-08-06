@@ -12,12 +12,14 @@ services:
       - next_cache:/app/.next
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:kaisei_password@db-dev:5432/kaisei_dev
-    depends_on:
-      - db-dev
-    command: npm run dev
+      - DATABASE_URL=${DATABASE_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    command: ["sh", "/app/scripts/start-dev.sh"]
 
-  # データベース（開発用）
+  # データベース（開発用）- ローカルPostgreSQL（Neon接続に問題がある場合のフォールバック）
   db-dev:
     image: postgres:15-alpine
     environment:
