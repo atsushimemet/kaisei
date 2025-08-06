@@ -33,8 +33,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # 本番用スタートアップスクリプトをコピー
-COPY scripts/start-prod.sh /app/start-prod.sh
-RUN chmod +x /app/start-prod.sh
+COPY scripts/start-simple.sh /app/start-simple.sh
+RUN chmod +x /app/start-simple.sh
 
 # 必要なファイルのみをコピー
 COPY --from=builder /app/package*.json ./
@@ -56,4 +56,4 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 # 本番用スタートアップスクリプトを実行
-CMD ["/app/start-prod.sh"]
+CMD ["/app/start-simple.sh"]
