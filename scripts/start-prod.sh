@@ -2,10 +2,16 @@
 
 echo "🚀 Starting Kaisei (Production Mode)..."
 
-# Prisma Client生成のみ
+# 基本的な環境変数確認
+if [ -z "$DATABASE_URL" ]; then
+  echo "❌ DATABASE_URL is not set"
+  exit 1
+fi
+
+# Prisma Client生成
 echo "🔧 Generating Prisma Client..."
 npx prisma generate
 
-# 即座にNext.jsアプリケーション起動（DB接続テストなし）
+# Next.jsアプリケーション起動
 echo "🌟 Starting Next.js on port ${PORT:-3000}..."
 exec node server.js
