@@ -32,6 +32,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # 必要なファイルのみをコピー
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
@@ -39,10 +40,19 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+
+# スタートアップスクリプトをコピー
+COPY scripts/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Prismaバイナリへのパスを追加
+ENV PATH="/app/node_modules/.bin:$PATH"
 
 EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-CMD ["node", "server.js"] 
+# スタートアップスクリプトを実行
+CMD ["/app/start.sh"] 
