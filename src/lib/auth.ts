@@ -100,7 +100,7 @@ export const authOptions: NextAuthOptions = {
                 email: user.email,
                 name: user.name,
                 image: user.image,
-                email_verified: profile?.email_verified ? new Date() : null,
+                email_verified: null,
                 created_at: new Date(),
                 updated_at: new Date()
               }

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(
@@ -15,13 +15,14 @@ export async function POST(
     console.log('🔍 [POST /venues] venueOrderが送信されているか:', venueOrder !== undefined)
 
     // 現在のvenueOrderを昇順で取得
-    const existingVenues = await prisma.venue.findMany({
-      where: { eventId },
-      orderBy: { venueOrder: 'asc' },
-      select: { venueOrder: true }
+    const prisma = getPrisma()
+    const existingVenues = await prisma.venues.findMany({
+      where: { event_id: eventId },
+      orderBy: { venue_order: 'asc' },
+      select: { venue_order: true }
     })
 
-    console.log('📊 [POST /venues] 既存のvenueOrder一覧:', existingVenues.map(v => v.venueOrder))
+    console.log('📊 [POST /venues] 既存のvenueOrder一覧:', existingVenues.map(v => v.venue_order))
 
     // venueOrderが送信されている場合はそれを使用、そうでなければ最小の空き番号を計算
     let nextVenueOrder: number
@@ -34,7 +35,7 @@ export async function POST(
       // 最小の空きvenueOrderを計算
       nextVenueOrder = 1
       for (const venue of existingVenues) {
-        if (venue.venueOrder === nextVenueOrder) {
+        if (venue.venue_order === nextVenueOrder) {
           nextVenueOrder++
         } else {
           break // 空き番号が見つかった
@@ -43,14 +44,15 @@ export async function POST(
       console.log('🔢 [POST /venues] 計算されたvenueOrder:', nextVenueOrder)
     }
 
-    const venue = await prisma.venue.create({
+    const venue = await prisma.venues.create({
       data: {
-        eventId,
-        venueOrder: nextVenueOrder,
+        event_id: eventId,
+        venue_order: nextVenueOrder,
         name,
-        googleMapsUrl,
-        totalAmount,
-        paidBy,
+        google_maps_url: googleMapsUrl,
+        total_amount: totalAmount,
+        paid_by: paidBy,
+        created_at: new Date(),
       },
     })
 

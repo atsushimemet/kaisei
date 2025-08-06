@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       } : null,
       callbackUrl: callbackUrl || null,
       csrfToken: csrfToken ? 'SET (hidden)' : null,
-      allCookieNames: Array.from(cookies.keys())
+      allCookieNames: cookies.getAll().map(cookie => cookie.name)
     },
     environment: {
       NEXTAUTH_URL: process.env.NEXTAUTH_URL,

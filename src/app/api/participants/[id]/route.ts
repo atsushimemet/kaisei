@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth'
@@ -58,9 +58,10 @@ export async function PUT(
     }
 
     // 参加者がログインユーザーのイベントに属しているかチェック
-    const participant = await prisma.participant.findUnique({
+    const prisma = getPrisma()
+    const participant = await prisma.participants.findUnique({
       where: { id: participantId },
-      include: { event: true }
+      include: { events: true }
     })
 
     if (!participant) {
@@ -70,14 +71,14 @@ export async function PUT(
       )
     }
 
-    if (participant.event.userId !== session.user.id) {
+    if (participant.events.user_id !== session.user.id) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
       )
     }
 
-    const updatedParticipant = await prisma.participant.update({
+    const updatedParticipant = await prisma.participants.update({
       where: {
         id: participantId,
       },
@@ -85,7 +86,7 @@ export async function PUT(
         nickname: nickname.trim(),
         gender,
         role,
-        stayRange: JSON.stringify(stayRange),
+        stay_range: JSON.stringify(stayRange),
       },
     })
 
@@ -122,9 +123,10 @@ export async function DELETE(
     }
 
     // 参加者がログインユーザーのイベントに属しているかチェック
-    const participant = await prisma.participant.findUnique({
+    const prisma = getPrisma()
+    const participant = await prisma.participants.findUnique({
       where: { id: participantId },
-      include: { event: true }
+      include: { events: true }
     })
 
     if (!participant) {
@@ -134,14 +136,14 @@ export async function DELETE(
       )
     }
 
-    if (participant.event.userId !== session.user.id) {
+    if (participant.events.user_id !== session.user.id) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
       )
     }
 
-    await prisma.participant.delete({
+    await prisma.participants.delete({
       where: {
         id: participantId,
       },
