@@ -1,12 +1,19 @@
 FROM node:20-alpine AS builder
 
+# OpenSSLライブラリをインストール
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # パッケージファイルをコピー
 COPY package*.json ./
+COPY prisma ./prisma/
 
 # 依存関係をインストール
 RUN npm ci
+
+# Prismaクライアント生成
+RUN npx prisma generate
 
 # ソースコードをコピー
 COPY . .
@@ -17,19 +24,25 @@ RUN npm run build
 # 本番環境
 FROM node:20-alpine AS runner
 
+# OpenSSLライブラリをインストール
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # 必要なファイルのみをコピー
 COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 CMD ["node", "server.js"] 

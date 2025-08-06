@@ -4,9 +4,9 @@ import { ArrowLeft, Calculator, Chrome, List, Shield } from 'lucide-react'
 import { getProviders, signIn, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
-export default function SignInPage() {
+function SignInContent() {
   const [providers, setProviders] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -137,5 +137,20 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">ページを読み込み中...</p>
+        </div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   )
 }
