@@ -1,8 +1,10 @@
 services:
   - type: web
-    name: kaisei-app
+    name: kaisei
     env: docker
     dockerfilePath: ./Dockerfile.prod
+    region: singapore
+    branch: main
     envVars:
       - key: NODE_ENV
         value: production
@@ -11,15 +13,10 @@ services:
       - key: NEXTAUTH_SECRET
         sync: false  # Set manually in Render dashboard
       - key: DATABASE_URL
-        sync: false  # Set manually in Render dashboard
+        sync: false  # Set manually in Render dashboard (Neon PostgreSQL Singapore URL)
       - key: GOOGLE_CLIENT_ID
         sync: false  # Set manually in Render dashboard
       - key: GOOGLE_CLIENT_SECRET
         sync: false  # Set manually in Render dashboard
-      - key: GOOGLE_MAPS_API_KEY
-        sync: false  # Set manually in Render dashboard
 
-databases:
-  - name: kaisei-db
-    plan: free
-    region: oregon
+# Note: Using external Neon database (Singapore region) instead of Render PostgreSQL

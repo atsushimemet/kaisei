@@ -2,7 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   images: {
-    domains: ['localhost', 'kaisei-app.onrender.com'],
+    domains: ['localhost', 'kaisei.onrender.com'],
   },
   // CSS optimization for production
   experimental: {
