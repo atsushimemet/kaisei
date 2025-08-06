@@ -2,7 +2,7 @@ services:
   - type: web
     name: kaisei
     env: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile.prod
     region: singapore
     branch: main
     healthCheckPath: /api/health
