@@ -60,13 +60,16 @@ npx prisma db push
 ```
 
 #### 方法2: 自動マイグレーション（推奨）
-アプリケーションの`start`スクリプトで自動実行されます：
+Docker起動時にスタートアップスクリプトで自動実行されます：
 ```bash
-# package.json内で設定済み
-"start": "prisma db push --accept-data-loss && next start"
+# scripts/start.sh で実行される処理
+1. データベース接続確認
+2. prisma db push --accept-data-loss --skip-generate
+3. Next.jsアプリケーション起動
 ```
 - Renderでのデプロイ時に自動でデータベーススキーマを更新
 - 初回デプロイでテーブルが自動作成される
+- データベース接続を確認してから起動するため確実
 
 #### 方法3: 手動での初回セットアップのみ必要な場合
 上記の自動マイグレーションで十分ですが、事前にローカルでテストする場合：
