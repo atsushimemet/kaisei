@@ -34,9 +34,15 @@ NODE_ENV=production
 DATABASE_URL=[Step2でコピーしたNeon Database URL]
 NEXTAUTH_URL=https://kaisei.onrender.com
 NEXTAUTH_SECRET=[長いランダムな文字列を生成]
+NEXTAUTH_TRUST_HOST=true
 GOOGLE_CLIENT_ID=[Google Console OAuth Client ID]
 GOOGLE_CLIENT_SECRET=[Google Console OAuth Client Secret]
 ```
+
+**重要事項**:
+- `NEXTAUTH_URL`は必ず`https://`で始まる正確なURLを設定してください
+- `NEXTAUTH_TRUST_HOST=true`によりプロキシ環境でのHTTPS判定が正しく動作します
+- 環境変数にスペースやtypoがないか十分に確認してください
 
 ### 5. データベースマイグレーション
 **注意**: Renderの無料プランではシェルアクセスができないため、以下の方法でマイグレーションを実行します：
@@ -107,22 +113,30 @@ Google Cloud Consoleで：
 
 **解決策**:
 1. **環境変数の確認**:
-   - `NEXTAUTH_URL=https://kaisei.onrender.com` が正しく設定されているか確認
-   - `NEXTAUTH_SECRET` が長い安全な文字列に設定されているか確認
+   - `NEXTAUTH_URL=https://kaisei.onrender.com` が**正確に**設定されているか確認
+   - `NEXTAUTH_SECRET` が32文字以上の長い安全な文字列に設定されているか確認
+   - 環境変数にtypoがないか確認（特にURLの末尾にスラッシュがないこと）
 
 2. **Google Cloud Console設定**:
-   - 承認済みリダイレクトURIに以下が登録されているか確認：
+   - 承認済みリダイレクトURIに以下が**完全に一致**して登録されているか確認：
      - `https://kaisei.onrender.com/api/auth/callback/google`
    - 承認済みJavaScript生成元に以下が登録されているか確認：
      - `https://kaisei.onrender.com`
 
-3. **ブラウザキャッシュとCookieのクリア**:
+3. **プロキシ環境での追加確認**:
+   - Render Dashboard > Environment で `NEXTAUTH_URL` が `https://` で始まっているか確認
+   - アプリログで「trustHost: true」が有効になっているか確認
+   - セキュアCookieが正しく設定されているか確認
+
+4. **ブラウザキャッシュとCookieのクリア**:
    - ブラウザの設定からCookieとキャッシュをクリア
    - プライベートブラウジングモードでテスト
+   - デベロッパーツールでCookie設定を確認
 
-4. **デバッグ方法**:
+5. **デバッグ方法**:
    - Render Dashboardでアプリケーションログを確認
-   - NextAuth debug モードは開発環境でのみ有効
+   - `X-Forwarded-Proto: https` ヘッダーが正しく設定されているか確認
+   - セッションCookieの `Secure` フラグが設定されているか確認
 
 ## 本番環境での確認事項
 - [ ] アプリケーションが正常に起動する
