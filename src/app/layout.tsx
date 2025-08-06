@@ -19,6 +19,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
+      <head>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-GHMYB7WRCE"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-GHMYB7WRCE');
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <SessionProvider>
           <ClientLogger componentName="RootLayout" />
