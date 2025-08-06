@@ -1,4 +1,4 @@
-# 本番用Dockerfile (Render対応)
+# 本番用Dockerfile (Renderシンプル版)
 FROM node:20-alpine AS builder
 
 # 必要なパッケージをインストール
@@ -25,7 +25,7 @@ RUN npm run build
 # 本番環境
 FROM node:20-alpine AS runner
 
-# 必要なパッケージをインストール（wgetを追加してヘルスチェック用）
+# 必要なパッケージをインストール
 RUN apk add --no-cache openssl wget
 
 WORKDIR /app
@@ -43,22 +43,21 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
-# スタートアップスクリプトをコピー（render.yamlと一致させる）
-COPY scripts/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+# シンプルなスタートアップスクリプトをコピー
+COPY scripts/start-prod.sh /app/start-prod.sh
+RUN chmod +x /app/start-prod.sh
 
 # Prismaバイナリへのパスを追加
 ENV PATH="/app/node_modules/.bin:$PATH"
 
-EXPOSE 10000
+EXPOSE 3000
 
-# PORTはRender Environmentで設定される（デフォルト: 10000）
-# ENV PORT=3000  # この行を削除してRender設定を優先
+ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# ヘルスチェックを追加（環境変数PORTを使用）
+# ヘルスチェックを追加
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-10000}/api/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# スタートアップスクリプトを実行
-CMD ["/app/start.sh"]
+# シンプルなスタートアップスクリプトを実行
+CMD ["/app/start-prod.sh"]
