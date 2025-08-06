@@ -5,18 +5,20 @@ services:
     dockerfilePath: ./Dockerfile.prod
     region: singapore
     branch: main
+    healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: NEXTAUTH_URL
-        sync: false  # Set manually in Render dashboard
+        sync: false # Set manually in Render dashboard
       - key: NEXTAUTH_SECRET
-        sync: false  # Set manually in Render dashboard
+        sync: false # Set manually in Render dashboard
       - key: DATABASE_URL
-        sync: false  # Set manually in Render dashboard (Neon PostgreSQL Singapore URL)
+        sync: false # Set manually in Render dashboard (Neon PostgreSQL Singapore URL)
       - key: GOOGLE_CLIENT_ID
-        sync: false  # Set manually in Render dashboard
+        sync: false # Set manually in Render dashboard
       - key: GOOGLE_CLIENT_SECRET
-        sync: false  # Set manually in Render dashboard
+        sync: false # Set manually in Render dashboard
 
 # Note: Using external Neon database (Singapore region) instead of Render PostgreSQL

@@ -24,8 +24,8 @@ RUN npm run build
 # 本番環境
 FROM node:20-alpine AS runner
 
-# OpenSSLライブラリをインストール
-RUN apk add --no-cache openssl
+# OpenSSLライブラリとwgetをインストール
+RUN apk add --no-cache openssl wget
 
 WORKDIR /app
 
@@ -53,6 +53,10 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+
+# ヘルスチェックを追加
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 # スタートアップスクリプトを実行
 CMD ["/app/start.sh"] 
