@@ -17,12 +17,38 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, eventDate, participants, venues } = body
 
+    // 日付文字列をローカル日付として正しく解析
+    const parseEventDate = (dateString: string): Date => {
+      if (!dateString) {
+        throw new Error('Event date is required')
+      }
+      
+      // YYYY-MM-DD形式の文字列をローカル日付として解析
+      const dateParts = dateString.split('-')
+      if (dateParts.length !== 3) {
+        throw new Error('Invalid date format. Expected YYYY-MM-DD')
+      }
+      
+      const year = parseInt(dateParts[0], 10)
+      const month = parseInt(dateParts[1], 10) - 1 // Monthは0ベース
+      const day = parseInt(dateParts[2], 10)
+      
+      const parsedDate = new Date(year, month, day)
+      
+      // 日付が有効かチェック
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid date')
+      }
+      
+      return parsedDate
+    }
+
     // 飲み会を作成（ユーザーIDを設定）
     const prisma = getPrisma()
     const event = await prisma.events.create({
       data: {
         title,
-        event_date: new Date(eventDate),
+        event_date: parseEventDate(eventDate),
         user_id: session.user.id, // ユーザーIDを設定（snake_case）
         created_at: new Date(),
         updated_at: new Date(),
@@ -92,6 +118,7 @@ export async function GET() {
     // データベースのsnake_caseをフロントエンド用のcamelCaseに変換
     const eventsWithParsedData = events.map(event => ({
       ...event,
+      eventDate: event.event_date, // snake_case -> camelCase
       participants: event.participants.map(participant => {
         let parsedStayRange: any;
         try {

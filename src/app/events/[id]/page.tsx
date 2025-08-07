@@ -134,6 +134,26 @@ export default function EventDetailPage() {
     return Number(amount).toLocaleString()
   }
 
+  const formatDate = (dateInput: string | Date | undefined | null) => {
+    if (!dateInput) {
+      return '日付未設定'
+    }
+    try {
+      const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
+      if (isNaN(date.getTime())) {
+        return '無効な日付'
+      }
+      return date.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    } catch (error) {
+      console.error('Date formatting error:', error)
+      return '日付エラー'
+    }
+  }
+
   const toggleAccordion = (key: string) => {
     setExpandedAccordions(prev => ({
       ...prev,
@@ -402,7 +422,7 @@ export default function EventDetailPage() {
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.title}</h1>
           <p className="text-gray-600">
-            開催日: {new Date(event.eventDate).toLocaleDateString('ja-JP')}
+            開催日: {formatDate(event.eventDate)}
           </p>
         </div>
 
