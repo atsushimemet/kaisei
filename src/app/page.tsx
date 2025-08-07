@@ -110,42 +110,86 @@ export default function HomePage() {
               利用方法を選択してください
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
-              {/* ログインなしで精算 */}
+              {/* 飲み会作成 */}
               <div className="bg-white p-8 rounded-lg shadow-md border-2 border-blue-200">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Zap className="w-8 h-8 text-blue-600" />
+                    {status === 'authenticated' ? <Plus className="w-8 h-8 text-blue-600" /> : <Zap className="w-8 h-8 text-blue-600" />}
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    すぐに精算を始める
+                    {status === 'authenticated' ? '飲み会を作成する' : 'クイック精算'}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    ログイン不要で一度きりの精算を実行
+                    {status === 'authenticated' ? (
+                      <>
+                        参加者・会場情報を登録して精算を実行<br/>
+                        <span className="text-green-600 font-medium">※データは永続化されます</span>
+                      </>
+                    ) : (
+                      <>
+                        ログイン不要で一度きりの精算を実行<br/>
+                        <span className="text-orange-600 font-medium">※データは保存されません</span>
+                      </>
+                    )}
                   </p>
                 </div>
                 
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">すぐに精算を開始</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">データは保存されません</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">結果をコピーして共有</span>
-                  </div>
+                  {status === 'authenticated' ? (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm text-gray-700">参加者・会場を詳細登録</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm text-gray-700">データは永続化されます</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm text-gray-700">後から確認・編集可能</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm text-gray-700">すぐに精算を開始</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm text-gray-700">データは保存されません</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm text-gray-700">結果をコピーして共有</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                <Link
-                  href="/events/new/quick"
-                  className="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Zap className="w-5 h-5 mr-2" />
-                  すぐに精算を始める
-                </Link>
+                {status === 'authenticated' ? (
+                  <div className="space-y-3">
+                    <Link
+                      href="/events/new"
+                      className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      飲み会を作成する
+                    </Link>
+                    <p className="text-xs text-gray-500 text-center">
+                      ログイン済みのため、データが保存されます
+                    </p>
+                  </div>
+                ) : (
+                  <Link
+                    href="/events/new/quick"
+                    className="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Zap className="w-5 h-5 mr-2" />
+                    クイック精算を開始
+                  </Link>
+                )}
               </div>
 
               {/* ログインして管理 */}
