@@ -118,6 +118,7 @@ export async function GET() {
     // データベースのsnake_caseをフロントエンド用のcamelCaseに変換
     const eventsWithParsedData = events.map(event => ({
       ...event,
+      eventDate: event.event_date, // snake_case -> camelCase
       participants: event.participants.map(participant => {
         let parsedStayRange: any;
         try {
