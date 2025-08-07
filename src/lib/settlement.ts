@@ -251,11 +251,16 @@ export function calculatePaymentSummary(event: Event, settlements: SettlementCal
     console.log(`  - 支払ったお店:`, paidVenues.map(v => `${v.name} ¥${v.totalAmount}`))
     console.log(`  - 総支払額: ¥${totalPaid}`)
 
-    // 支払い義務のある金額を取得
-    const settlement = settlements.find(s => s.participantId === participant.id)
+    // 支払い義務のある金額を取得（型変換して安全に比較）
+    const settlement = settlements.find(s => {
+      const sParticipantId = typeof s.participantId === 'string' ? parseInt(s.participantId) : s.participantId
+      const pId = typeof participant.id === 'string' ? parseInt(participant.id) : participant.id
+      return sParticipantId === pId
+    })
     const totalOwed = settlement?.amount || 0
     
     console.log(`💰 [calculatePaymentSummary] ${participant.nickname}さん(ID:${participant.id})の精算検索:`)
+    console.log(`  - settlements配列:`, settlements.map(s => ({ participantId: s.participantId, participantIdType: typeof s.participantId, amount: s.amount })))
     console.log(`  - 検索したsettlement:`, settlement)
     console.log(`  - 負担義務額: ¥${totalOwed}`)
 
