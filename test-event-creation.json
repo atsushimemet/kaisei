@@ -1,0 +1,40 @@
+{
+  "title": "テスト飲み会",
+  "eventDate": "2025-08-07",
+  "participants": [
+    {
+      "nickname": "テスト太郎",
+      "gender": "male",
+      "role": "senior",
+      "stayRange": {
+        "firstParty": 1,
+        "secondParty": 1,
+        "thirdParty": 0
+      }
+    },
+    {
+      "nickname": "テスト花子",
+      "gender": "female", 
+      "role": "junior",
+      "stayRange": {
+        "firstParty": 1,
+        "secondParty": 1,
+        "thirdParty": 0
+      }
+    }
+  ],
+  "venues": [
+    {
+      "venueOrder": 1,
+      "name": "テスト居酒屋",
+      "totalAmount": 5000,
+      "paidBy": "テスト太郎"
+    },
+    {
+      "venueOrder": 2,
+      "name": "テストカラオケ",
+      "totalAmount": 3000,
+      "paidBy": "テスト花子"
+    }
+  ]
+}
