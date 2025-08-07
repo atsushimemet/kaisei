@@ -90,8 +90,61 @@ export async function POST(
       )
     }
 
+    // デバッグ: イベントデータの構造を確認
+    console.log('🔍 [POST /api/events/[id]/settlements] イベントデータ詳細:')
+    console.log('  - Event ID:', event.id)
+    console.log('  - Participants:', event.participants.map(p => ({ id: p.id, nickname: p.nickname })))
+    console.log('  - Venues:', event.venues.map(v => ({ 
+      id: v.id, 
+      venue_order: v.venue_order, 
+      venueOrder: (v as any).venueOrder,
+      name: v.name, 
+      total_amount: v.total_amount, 
+      totalAmount: (v as any).totalAmount,
+      paid_by: v.paid_by,
+      paidBy: (v as any).paidBy
+    })))
+
+    // データベースのsnake_caseをフロントエンド用のcamelCaseに変換
+    const eventWithConvertedData = {
+      ...event,
+      participants: event.participants.map(participant => {
+        let parsedStayRange: any;
+        try {
+          parsedStayRange = JSON.parse(participant.stay_range) as any;
+        } catch {
+          parsedStayRange = {
+            firstParty: 1,
+            secondParty: 1,
+            thirdParty: 1
+          };
+        }
+        
+        return {
+          ...participant,
+          stayRange: parsedStayRange
+        };
+      }),
+      venues: event.venues.map(venue => ({
+        ...venue,
+        venueOrder: venue.venue_order, // snake_case -> camelCase
+        googleMapsUrl: venue.google_maps_url, // snake_case -> camelCase  
+        totalAmount: venue.total_amount, // snake_case -> camelCase
+        paidBy: venue.paid_by // snake_case -> camelCase
+      }))
+    };
+
+    console.log('🔍 [POST /api/events/[id]/settlements] 変換後のVenuesデータ:')
+    console.log(eventWithConvertedData.venues.map(v => ({ 
+      id: v.id, 
+      venueOrder: v.venueOrder,
+      name: v.name, 
+      totalAmount: v.totalAmount,
+      paidBy: v.paidBy
+    })))
+
     // 精算計算を実行（クライアントから送信された設定を使用）
-    const settlementData = calculateFullSettlement(event as any, config)
+    const settlementData = calculateFullSettlement(eventWithConvertedData as any, config)
 
     // 精算結果をデータベースに保存（既存の精算データを削除してから新規作成）
     await prisma.settlements.deleteMany({
